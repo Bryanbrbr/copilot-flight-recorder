@@ -2,6 +2,7 @@
  * Shared layout for all marketing pages (landing, features, pricing).
  * Provides consistent nav + footer across public pages.
  */
+import '@/styles/Landing.css'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth'
 
