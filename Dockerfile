@@ -1,15 +1,18 @@
 # ─── Stage 1: Build ──────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
 
+# Install build tools for native modules (better-sqlite3)
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
-# Install dependencies
+# Install ALL dependencies (including native modules)
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 COPY packages/db/package.json packages/db/
 COPY packages/shared/package.json packages/shared/
-RUN npm ci --ignore-scripts
+RUN npm ci
 
 # Copy source
 COPY . .
@@ -20,15 +23,21 @@ RUN npx vite build --outDir apps/web/dist
 # ─── Stage 2: Production ─────────────────────────────────────────────────
 FROM node:22-alpine AS production
 
+# Install runtime deps for native modules
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
-# Install production deps + tsx (needed to run TS directly)
+# Install production deps (with native module compilation)
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
 COPY packages/db/package.json packages/db/
 COPY packages/shared/package.json packages/shared/
-RUN npm ci --omit=dev --ignore-scripts && \
+RUN npm ci --omit=dev && \
     npm install tsx --save-exact --no-save
+
+# Remove build tools to reduce image size
+RUN apk del python3 make g++
 
 # Copy source (API runs from TypeScript via tsx)
 COPY --from=builder /app/packages/shared packages/shared
@@ -51,5 +60,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s \
   CMD wget -qO- http://localhost:8080/api/health || exit 1
 
-# Run migrations, seed if empty, then start server
-CMD ["sh", "-c", "npx tsx packages/db/src/migrate.ts && npx tsx apps/api/src/index.ts"]
+# Run migrations then start server
+CMD ["sh", "-c", "npx tsx packages/db/src/migrate.ts && npx tsx packages/db/src/seed.ts && npx tsx apps/api/src/index.ts"]
