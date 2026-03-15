@@ -28,23 +28,16 @@ import type { ViewId } from '@/types'
 
 function LandingRoute() {
   const navigate = useNavigate()
-  const { isAuthenticated, login } = useAuth()
 
   return (
     <LandingPage
-      onGetStarted={() => {
-        if (isAuthenticated) {
-          navigate('/app')
-        } else {
-          login()
-        }
-      }}
+      onGetStarted={() => navigate('/app')}
     />
   )
 }
 
 function AppRoute() {
-  const { isAuthenticated, isLoading: authLoading, user, logout, getAccessToken } = useAuth()
+  const { isAuthenticated, isDemoMode, isLoading: authLoading, user, logout, getAccessToken } = useAuth()
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -67,7 +60,7 @@ function AppRoute() {
     return <LoginPage />
   }
 
-  return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} onLogout={logout} />
+  return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} onLogout={logout} isDemoMode={isDemoMode} />
 }
 
 function App() {
@@ -82,7 +75,7 @@ function App() {
   )
 }
 
-function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string; userEmail: string; onLogout: () => void }) {
+function AuthenticatedApp({ userName, userEmail, onLogout, isDemoMode }: { userName: string; userEmail: string; onLogout: () => void; isDemoMode: boolean }) {
   const navigate = useNavigate()
   const {
     workspace,
@@ -220,6 +213,13 @@ function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string;
             Review incidents, rollout controls, and policy pressure across monitored agents and connected surfaces.
           </p>
         </div>
+
+        {isDemoMode && (
+          <div className="demo-banner">
+            <span className="demo-banner-badge">Demo</span>
+            <p>You are viewing sample data. <button type="button" className="demo-banner-link" onClick={() => navigate('/')}>Connect your tenant</button></p>
+          </div>
+        )}
 
         <div className="tenant-card">
           <span className="eyebrow">Sample tenant</span>

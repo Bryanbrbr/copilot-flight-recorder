@@ -582,6 +582,55 @@
   color: #2563eb;
 }
 
+/* Demo mode banner */
+.demo-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 16px 12px;
+  padding: 12px 14px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 8px;
+}
+
+.demo-banner-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f57f17;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.demo-banner p {
+  font-size: 0.78rem;
+  color: #5d4037;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.demo-banner-link {
+  background: none;
+  border: none;
+  color: #0078d4;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font-family: inherit;
+}
+
+.demo-banner-link:hover {
+  color: #106ebe;
+}
+
 .brand-kicker,
 .eyebrow,
 .dossier-label {

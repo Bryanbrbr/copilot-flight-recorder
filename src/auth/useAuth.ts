@@ -15,6 +15,7 @@ export function useAuth() {
     // Dev mode — no auth configured, return mock user
     return {
       isAuthenticated: true,
+      isDemoMode: true,
       isLoading: false,
       user: {
         name: 'Dev User',
@@ -66,6 +67,7 @@ export function useAuth() {
 
   return {
     isAuthenticated,
+    isDemoMode: false,
     isLoading: inProgress !== InteractionStatus.None,
     user,
     login,

@@ -3,15 +3,20 @@
  * Provides consistent nav + footer across public pages.
  */
 import '@/styles/Landing.css'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth'
 
 export function LandingLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
-  const { isAuthenticated, login } = useAuth()
+  const { isAuthenticated, isDemoMode, login } = useAuth()
+  const [showSignInModal, setShowSignInModal] = useState(false)
 
-  const handleGetStarted = () => {
-    if (isAuthenticated) {
+  const handleSignIn = () => {
+    if (isDemoMode) {
+      // Auth not configured — show info modal
+      setShowSignInModal(true)
+    } else if (isAuthenticated) {
       navigate('/app')
     } else {
       login()
@@ -31,7 +36,7 @@ export function LandingLayout({ children }: { children: React.ReactNode }) {
           <button type="button" className="landing-cta-small" onClick={() => navigate('/app')}>
             Try demo
           </button>
-          <button type="button" className="landing-cta-small" onClick={handleGetStarted}>
+          <button type="button" className="landing-cta-small landing-signin-btn" onClick={handleSignIn}>
             Sign in
           </button>
         </div>
@@ -70,6 +75,57 @@ export function LandingLayout({ children }: { children: React.ReactNode }) {
           <p>&copy; {new Date().getFullYear()} Copilot Flight Recorder. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* Microsoft Sign-in Modal */}
+      {showSignInModal && (
+        <div className="signin-modal-overlay" onClick={() => setShowSignInModal(false)}>
+          <div className="signin-modal" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="signin-modal-close" onClick={() => setShowSignInModal(false)} aria-label="Close">
+              &times;
+            </button>
+            <div className="signin-modal-logo">
+              <svg width="24" height="24" viewBox="0 0 21 21" fill="none">
+                <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+              </svg>
+              <span>Microsoft</span>
+            </div>
+            <h2>Sign in</h2>
+            <p>Connect your Microsoft 365 tenant to monitor your real Copilot agents.</p>
+
+            <div className="signin-modal-input-group">
+              <label htmlFor="signin-email">Email or phone</label>
+              <input id="signin-email" type="email" placeholder="user@company.com" disabled />
+            </div>
+
+            <div className="signin-modal-info">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" stroke="#0078d4" strokeWidth="1.5" fill="none" />
+                <text x="8" y="12" textAnchor="middle" fill="#0078d4" fontSize="11" fontWeight="700">i</text>
+              </svg>
+              <p>
+                Microsoft Entra ID authentication is not configured for this instance.
+                To connect your real tenant, set the <code>VITE_MSAL_CLIENT_ID</code> and <code>VITE_MSAL_TENANT_ID</code> environment variables.
+              </p>
+            </div>
+
+            <div className="signin-modal-actions">
+              <button type="button" className="landing-cta" onClick={() => { setShowSignInModal(false); navigate('/app') }}>
+                Try the demo instead
+              </button>
+              <a href="https://entra.microsoft.com" target="_blank" rel="noopener noreferrer" className="landing-cta-secondary">
+                Set up Entra ID
+              </a>
+            </div>
+
+            <p className="signin-modal-footer">
+              Protected by Microsoft Entra ID
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
