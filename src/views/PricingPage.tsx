@@ -90,7 +90,7 @@ export function PricingPage() {
               <li>Custom policies & connectors</li>
               <li>SLA & dedicated support</li>
             </ul>
-            <button type="button" className="landing-cta-secondary" onClick={handleGetStarted}>Contact sales</button>
+            <a href="mailto:sales@copilotflightrecorder.com?subject=Enterprise%20inquiry" className="landing-cta-secondary">Contact sales</a>
           </div>
         </div>
       </section>

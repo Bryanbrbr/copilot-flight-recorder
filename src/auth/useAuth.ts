@@ -24,7 +24,7 @@ export function useAuth() {
         objectId: 'dev-user-id',
       } as AuthUser,
       login: () => {},
-      logout: () => {},
+      logout: () => { window.location.href = '/' },
       getAccessToken: async () => null as string | null,
     }
   }

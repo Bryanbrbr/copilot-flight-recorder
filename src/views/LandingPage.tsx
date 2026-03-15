@@ -327,7 +327,7 @@ export function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
               <li>Dedicated deployment</li>
               <li>SSO & SCIM</li>
             </ul>
-            <button type="button" className="landing-cta-secondary" onClick={onGetStarted}>Contact sales</button>
+            <a href="mailto:sales@copilotflightrecorder.com?subject=Enterprise%20inquiry" className="landing-cta-secondary">Contact sales</a>
           </div>
         </div>
         <div className="landing-section-cta">

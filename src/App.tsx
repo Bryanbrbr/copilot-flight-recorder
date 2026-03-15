@@ -20,6 +20,8 @@ import { LoginPage } from '@/components/LoginPage'
 import { LandingPage } from '@/views/LandingPage'
 import { FeaturesPage } from '@/views/FeaturesPage'
 import { PricingPage } from '@/views/PricingPage'
+import { PrivacyPage } from '@/views/PrivacyPage'
+import { TermsPage } from '@/views/TermsPage'
 import { setApiTokenProvider } from '@/services/apiClient'
 import { LiveEventFeed } from '@/components/LiveEventFeed'
 import { ShortcutsHelp } from '@/components/ShortcutsHelp'
@@ -69,6 +71,8 @@ function App() {
       <Route path="/" element={<LandingRoute />} />
       <Route path="/features" element={<FeaturesPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
       <Route path="/app" element={<AppRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

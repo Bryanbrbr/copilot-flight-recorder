@@ -93,11 +93,11 @@ export function LandingLayout({ children }: { children: React.ReactNode }) {
               <span>Microsoft</span>
             </div>
             <h2>Sign in</h2>
-            <p>Connect your Microsoft 365 tenant to monitor your real Copilot agents.</p>
+            <p>Use your Microsoft 365 work account to connect your tenant and monitor your real Copilot agents.</p>
 
             <div className="signin-modal-input-group">
-              <label htmlFor="signin-email">Email or phone</label>
-              <input id="signin-email" type="email" placeholder="user@company.com" disabled />
+              <label htmlFor="signin-email">Work or school account</label>
+              <input id="signin-email" type="email" placeholder="admin@yourcompany.onmicrosoft.com" disabled />
             </div>
 
             <div className="signin-modal-info">
@@ -106,17 +106,16 @@ export function LandingLayout({ children }: { children: React.ReactNode }) {
                 <text x="8" y="12" textAnchor="middle" fill="#0078d4" fontSize="11" fontWeight="700">i</text>
               </svg>
               <p>
-                Microsoft Entra ID authentication is not configured for this instance.
-                To connect your real tenant, set the <code>VITE_MSAL_CLIENT_ID</code> and <code>VITE_MSAL_TENANT_ID</code> environment variables.
+                Microsoft Entra ID sign-in is coming soon. In the meantime, explore the full product with our interactive demo using sample data.
               </p>
             </div>
 
             <div className="signin-modal-actions">
               <button type="button" className="landing-cta" onClick={() => { setShowSignInModal(false); navigate('/app') }}>
-                Try the demo instead
+                Try the demo
               </button>
-              <a href="https://entra.microsoft.com" target="_blank" rel="noopener noreferrer" className="landing-cta-secondary">
-                Set up Entra ID
+              <a href="mailto:sales@copilotflightrecorder.com?subject=Early%20access%20request" className="landing-cta-secondary">
+                Request early access
               </a>
             </div>
 
