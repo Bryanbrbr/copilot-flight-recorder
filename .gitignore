@@ -35,8 +35,7 @@ npm-debug.log*
 # OS
 Thumbs.db
 
-# Drizzle meta (generated, keep migrations)
-packages/db/drizzle/meta/
+# Drizzle (keep migrations + meta for Docker builds)
 
 # Claude Code
 .claude/

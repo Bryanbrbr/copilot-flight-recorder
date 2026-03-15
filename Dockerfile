@@ -17,7 +17,7 @@ RUN npm ci
 # Copy source
 COPY . .
 
-# Build frontend (Vite)
+# Build frontend (Vite uses root vite.config.ts + root src/)
 RUN npx vite build --outDir apps/web/dist
 
 # ─── Stage 2: Production ─────────────────────────────────────────────────
@@ -51,14 +51,14 @@ COPY --from=builder /app/apps/web/dist apps/web/dist
 RUN mkdir -p /app/data
 
 ENV NODE_ENV=production
-ENV PORT=8080
 ENV DATABASE_PATH=/app/data/flight_recorder.db
 
-EXPOSE 8080
+# Render assigns PORT dynamically — do NOT hardcode it
+EXPOSE 10000
 
-# Health check
+# Health check uses $PORT at runtime
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s \
-  CMD wget -qO- http://localhost:8080/api/health || exit 1
+  CMD wget -qO- http://localhost:${PORT:-10000}/api/health || exit 1
 
-# Run migrations then start server
+# Run migrations, seed, then start server
 CMD ["sh", "-c", "npx tsx packages/db/src/migrate.ts && npx tsx packages/db/src/seed.ts && npx tsx apps/api/src/index.ts"]

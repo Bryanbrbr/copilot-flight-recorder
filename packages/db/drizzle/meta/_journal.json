@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1773509350785,
+      "tag": "0000_small_elektra",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1773538045880,
+      "tag": "0001_soft_umar",
+      "breakpoints": true
+    }
+  ]
+}

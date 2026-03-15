@@ -1,0 +1,12 @@
+node_modules
+.git
+data
+*.db
+*.db-wal
+*.db-shm
+.claude
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.log
