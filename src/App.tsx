@@ -1,4 +1,5 @@
 import './App.css'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useWorkspaceStore } from '@/hooks/useWorkspaceStore'
 import { AgentList } from '@/components/shared'
 import { DashboardView } from '@/views/DashboardView'
@@ -23,31 +24,31 @@ import { ShortcutsHelp } from '@/components/ShortcutsHelp'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import type { ViewId } from '@/types'
 
-function App() {
-  const { isAuthenticated, isLoading: authLoading, user, logout, getAccessToken, login } = useAuth()
-  const [showLanding, setShowLanding] = useState(() => {
-    return !sessionStorage.getItem('cfr-entered')
-  })
+function LandingRoute() {
+  const navigate = useNavigate()
+  const { isAuthenticated, login } = useAuth()
 
-  // Wire the JWT token provider into the API client
+  return (
+    <LandingPage
+      onGetStarted={() => {
+        if (isAuthenticated) {
+          navigate('/app')
+        } else {
+          login()
+        }
+      }}
+    />
+  )
+}
+
+function AppRoute() {
+  const { isAuthenticated, isLoading: authLoading, user, logout, getAccessToken } = useAuth()
+
   useEffect(() => {
     if (isAuthenticated) {
       setApiTokenProvider(getAccessToken)
     }
   }, [isAuthenticated, getAccessToken])
-
-  // Show landing page on first visit (even in dev mode for demo)
-  if (showLanding) {
-    return (
-      <LandingPage
-        onGetStarted={() => {
-          sessionStorage.setItem('cfr-entered', '1')
-          setShowLanding(false)
-          if (!isAuthenticated) login()
-        }}
-      />
-    )
-  }
 
   if (authLoading) {
     return (
@@ -67,7 +68,18 @@ function App() {
   return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} onLogout={logout} />
 }
 
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<LandingRoute />} />
+      <Route path="/app" element={<AppRoute />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
 function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string; userEmail: string; onLogout: () => void }) {
+  const navigate = useNavigate()
   const {
     workspace,
     activeView,
@@ -145,21 +157,9 @@ function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string;
           : 'No active case is steering the workspace right now.'
   const caseRibbonCards = linkedIncident
     ? [
-        {
-          label: 'Review state',
-          value: caseReviewState.label,
-          detail: caseReviewState.detail,
-        },
-        {
-          label: 'Policy boundary',
-          value: linkedPolicy?.name ?? 'Derived signal',
-          detail: linkedPolicy ? `${linkedPolicy.scope} / ${linkedPolicy.action}` : 'No direct policy mapping is attached to this case.',
-        },
-        {
-          label: 'Decision window',
-          value: caseResponseWindow,
-          detail: caseDecision,
-        },
+        { label: 'Review state', value: caseReviewState.label, detail: caseReviewState.detail },
+        { label: 'Policy boundary', value: linkedPolicy?.name ?? 'Derived signal', detail: linkedPolicy ? `${linkedPolicy.scope} / ${linkedPolicy.action}` : 'No direct policy mapping is attached to this case.' },
+        { label: 'Decision window', value: caseResponseWindow, detail: caseDecision },
       ]
     : []
   const investigationRail = [
@@ -208,7 +208,9 @@ function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string;
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand-block">
-          <span className="brand-kicker">Copilot Flight Recorder</span>
+          <button type="button" className="brand-home-link" onClick={() => navigate('/')}>
+            <span className="brand-kicker">Copilot Flight Recorder</span>
+          </button>
           <h1>Admin center for Copilot agent operations.</h1>
           <p>
             Review incidents, rollout controls, and policy pressure across monitored agents and connected surfaces.
@@ -368,24 +370,12 @@ function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string;
               ))}
             </div>
             <div className="case-ribbon-actions">
-              <button type="button" className="action-button primary" onClick={() => openView('timeline')}>
-                Open case
-              </button>
-              <button type="button" className="action-button subtle" onClick={() => openView('governance')}>
-                Open policy
-              </button>
-              <button
-                type="button"
-                className="action-button"
-                onClick={() => updateAlertStatus(linkedIncident.id, linkedIncident.status === 'acknowledged' ? 'open' : 'acknowledged')}
-              >
+              <button type="button" className="action-button primary" onClick={() => openView('timeline')}>Open case</button>
+              <button type="button" className="action-button subtle" onClick={() => openView('governance')}>Open policy</button>
+              <button type="button" className="action-button" onClick={() => updateAlertStatus(linkedIncident.id, linkedIncident.status === 'acknowledged' ? 'open' : 'acknowledged')}>
                 {linkedIncident.status === 'acknowledged' ? 'Return to open' : 'Acknowledge'}
               </button>
-              <button
-                type="button"
-                className="action-button subtle"
-                onClick={() => updateAlertStatus(linkedIncident.id, linkedIncident.status === 'resolved' ? 'open' : 'resolved')}
-              >
+              <button type="button" className="action-button subtle" onClick={() => updateAlertStatus(linkedIncident.id, linkedIncident.status === 'resolved' ? 'open' : 'resolved')}>
                 {linkedIncident.status === 'resolved' ? 'Reopen' : 'Resolve'}
               </button>
             </div>
@@ -400,71 +390,27 @@ function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string;
         ) : null}
 
         {activeView === 'dashboard' ? (
-          <DashboardView
-            selectedAgent={selectedAgent}
-            alerts={liveAlerts}
-            rolloutModes={policyRolloutModes}
+          <DashboardView selectedAgent={selectedAgent} alerts={liveAlerts} rolloutModes={policyRolloutModes}
             onOpenIncident={(alertId) => { if (alertId) { setSelectedAlertId(alertId) } openView('alerts') }}
-            onSelectAgent={handleSelectAgent}
-            onOpenPolicies={() => openView('governance')}
-          />
+            onSelectAgent={handleSelectAgent} onOpenPolicies={() => openView('governance')} />
         ) : null}
         {activeView === 'timeline' ? (
-          <TimelineView
-            selectedAgent={selectedAgent}
-            agentAlerts={selectedAgentAlerts}
-            highlightedAlert={linkedIncident}
-            caseActivity={linkedCaseActivity}
-            onOpenAlertCenter={() => openView('alerts')}
-            onOpenGovernance={() => openView('governance')}
-          />
+          <TimelineView selectedAgent={selectedAgent} agentAlerts={selectedAgentAlerts} highlightedAlert={linkedIncident}
+            caseActivity={linkedCaseActivity} onOpenAlertCenter={() => openView('alerts')} onOpenGovernance={() => openView('governance')} />
         ) : null}
         {activeView === 'alerts' ? (
-          <AlertsView
-            alerts={liveAlerts}
-            selectedAlertId={selectedAlertId}
-            caseActivity={caseActivity}
-            onSelectAlert={setSelectedAlertId}
-            onUpdateAlertStatus={updateAlertStatus}
-            onOpenIncident={() => openView('timeline')}
-            onOpenGovernance={() => openView('governance')}
-            onSelectAgent={handleSelectAgent}
-          />
+          <AlertsView alerts={liveAlerts} selectedAlertId={selectedAlertId} caseActivity={caseActivity}
+            onSelectAlert={setSelectedAlertId} onUpdateAlertStatus={updateAlertStatus} onOpenIncident={() => openView('timeline')}
+            onOpenGovernance={() => openView('governance')} onSelectAgent={handleSelectAgent} />
         ) : null}
         {activeView === 'governance' ? (
-          <GovernanceView
-            highlightedPolicyId={effectivePolicyId}
-            alerts={liveAlerts}
-            caseActivity={caseActivity}
-            rolloutModes={policyRolloutModes}
-            onSelectAgent={handleSelectAgent}
-            onOpenIncident={(alertId) => {
-              if (alertId) {
-                const alert = liveAlerts.find((item) => item.id === alertId)
-                if (alert) {
-                  setSelectedAgentId(alert.agentId)
-                }
-                setSelectedAlertId(alertId)
-              }
-              openView('timeline')
-            }}
-            onOpenQueue={(alertId) => {
-              if (alertId) {
-                const alert = liveAlerts.find((item) => item.id === alertId)
-                if (alert) {
-                  setSelectedAgentId(alert.agentId)
-                }
-                setSelectedAlertId(alertId)
-              }
-              openView('alerts')
-            }}
-            onSetPolicyRollout={(policyId, mode) => setPolicyRollout(policyId, mode)}
-            onFocusPolicy={setFocusedPolicyId}
-          />
+          <GovernanceView highlightedPolicyId={effectivePolicyId} alerts={liveAlerts} caseActivity={caseActivity}
+            rolloutModes={policyRolloutModes} onSelectAgent={handleSelectAgent}
+            onOpenIncident={(alertId) => { if (alertId) { const a = liveAlerts.find((i) => i.id === alertId); if (a) setSelectedAgentId(a.agentId); setSelectedAlertId(alertId) } openView('timeline') }}
+            onOpenQueue={(alertId) => { if (alertId) { const a = liveAlerts.find((i) => i.id === alertId); if (a) setSelectedAgentId(a.agentId); setSelectedAlertId(alertId) } openView('alerts') }}
+            onSetPolicyRollout={(policyId, mode) => setPolicyRollout(policyId, mode)} onFocusPolicy={setFocusedPolicyId} />
         ) : null}
-        {activeView === 'settings' ? (
-          <SettingsView />
-        ) : null}
+        {activeView === 'settings' ? <SettingsView /> : null}
       </main>
 
       <LiveEventFeed />

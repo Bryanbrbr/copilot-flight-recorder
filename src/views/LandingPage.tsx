@@ -4,6 +4,7 @@
  * or accessible at /landing for demo purposes.
  */
 import { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 function useScrollReveal() {
   const ref = useRef<HTMLDivElement>(null)
@@ -172,6 +173,8 @@ function ProductPreview({ onClick }: { onClick: () => void }) {
 /* ─── Landing Page ─────────────────────────────────────────────── */
 
 export function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
+  const navigate = useNavigate()
+  const goToApp = () => navigate('/app')
   return (
     <div className="landing">
       {/* ─── Hero ─────────────────────────────────────────────────── */}
@@ -185,6 +188,9 @@ export function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
             <a href="#preview">Product</a>
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
+            <button type="button" className="landing-cta-small" onClick={goToApp}>
+              Try demo
+            </button>
             <button type="button" className="landing-cta-small" onClick={onGetStarted}>
               Sign in
             </button>

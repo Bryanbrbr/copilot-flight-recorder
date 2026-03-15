@@ -1059,6 +1059,18 @@
   color: #5d6e88;
 }
 
+.brand-home-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.brand-home-link:hover .brand-kicker {
+  color: #2563eb;
+}
+
 .brand-kicker,
 .eyebrow,
 .dossier-label {
