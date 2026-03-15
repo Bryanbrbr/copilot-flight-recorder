@@ -1,0 +1,159 @@
+:root {
+  /* ─── Brand & primary ─── */
+  --color-primary: #1f4fa3;
+  --color-primary-hover: #183f82;
+  --color-primary-light: #eef3f9;
+  --color-primary-surface: #fbfdff;
+
+  /* ─── Text ─── */
+  --color-text-primary: #10203a;
+  --color-text-secondary: #62748e;
+  --color-text-tertiary: #8a9bb5;
+  --color-text-inverse: #ffffff;
+
+  /* ─── Backgrounds ─── */
+  --color-bg-app: #f5f7fa;
+  --color-bg-surface: #ffffff;
+  --color-bg-elevated: #fbfdff;
+  --color-bg-sidebar: #13233d;
+  --color-bg-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --color-bg-muted: #f0f4f9;
+
+  /* ─── Borders ─── */
+  --color-border: #d9e2ee;
+  --color-border-light: #e8eef6;
+  --color-border-strong: #bcc8d8;
+
+  /* ─── Severity ─── */
+  --color-severity-low: #2fa56d;
+  --color-severity-low-bg: #eaf7f1;
+  --color-severity-medium: #d39d2e;
+  --color-severity-medium-bg: #fdf6e6;
+  --color-severity-high: #dd7d48;
+  --color-severity-high-bg: #fdf0e8;
+  --color-severity-critical: #d5536c;
+  --color-severity-critical-bg: #fbe8ec;
+
+  /* ─── Status ─── */
+  --color-status-healthy: #2fa56d;
+  --color-status-healthy-bg: #eaf7f1;
+  --color-status-watch: #d39d2e;
+  --color-status-watch-bg: #fdf6e6;
+  --color-status-critical: #d5536c;
+  --color-status-critical-bg: #fbe8ec;
+
+  /* ─── Outcome ─── */
+  --color-outcome-success: #2fa56d;
+  --color-outcome-warning: #d39d2e;
+  --color-outcome-failure: #d5536c;
+  --color-outcome-blocked: #d5536c;
+
+  /* ─── Spacing scale ─── */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ─── Radius ─── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 9999px;
+
+  /* ─── Typography ─── */
+  --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-size-xs: 0.7rem;
+  --font-size-sm: 0.82rem;
+  --font-size-base: 0.92rem;
+  --font-size-md: 1.05rem;
+  --font-size-lg: 1.22rem;
+  --font-size-xl: 1.38rem;
+  --font-size-2xl: 1.72rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-base: 1.55;
+  --line-height-relaxed: 1.7;
+  --letter-spacing-wide: 0.05em;
+
+  /* ─── Shadows ─── */
+  --shadow-sm: 0 1px 3px rgba(15, 34, 61, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 34, 61, 0.06);
+  --shadow-lg: 0 8px 20px rgba(15, 34, 61, 0.05);
+  --shadow-xl: 0 12px 32px rgba(15, 34, 61, 0.08);
+  --shadow-inset: inset 0 0 0 2px rgba(31, 79, 163, 0.12);
+
+  /* ─── Transitions ─── */
+  --transition-fast: 0.12s ease;
+  --transition-base: 0.18s ease;
+  --transition-slow: 0.3s ease;
+
+  /* ─── Layout ─── */
+  --sidebar-width: 308px;
+  --topbar-height: auto;
+  --content-max-width: 1400px;
+  --content-padding: 28px;
+
+  /* ─── Z-index ─── */
+  --z-sidebar: 10;
+  --z-topbar: 20;
+  --z-modal: 100;
+  --z-toast: 200;
+}
+
+/* ─── Dark theme ─── */
+[data-theme="dark"] {
+  --color-primary: #5b8fd9;
+  --color-primary-hover: #7ca8e6;
+  --color-primary-light: #1a2640;
+  --color-primary-surface: #0f1a2e;
+
+  --color-text-primary: #e4e9f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-tertiary: #64748b;
+  --color-text-inverse: #0f172a;
+
+  --color-bg-app: #0b1120;
+  --color-bg-surface: #111827;
+  --color-bg-elevated: #1e293b;
+  --color-bg-sidebar: #0a0f1e;
+  --color-bg-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --color-bg-muted: #1e293b;
+
+  --color-border: #1e293b;
+  --color-border-light: #253345;
+  --color-border-strong: #334155;
+
+  --color-severity-low: #34d399;
+  --color-severity-low-bg: #0f2a1f;
+  --color-severity-medium: #fbbf24;
+  --color-severity-medium-bg: #2a2008;
+  --color-severity-high: #fb923c;
+  --color-severity-high-bg: #2a1a0b;
+  --color-severity-critical: #fb7185;
+  --color-severity-critical-bg: #2a0b12;
+
+  --color-status-healthy: #34d399;
+  --color-status-healthy-bg: #0f2a1f;
+  --color-status-watch: #fbbf24;
+  --color-status-watch-bg: #2a2008;
+  --color-status-critical: #fb7185;
+  --color-status-critical-bg: #2a0b12;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-inset: inset 0 0 0 2px rgba(91, 143, 217, 0.2);
+}

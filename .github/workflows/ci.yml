@@ -1,0 +1,102 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: TypeScript check (Web)
+        run: npx tsc --noEmit
+
+      - name: TypeScript check (API)
+        run: npx tsc --noEmit -p apps/api/tsconfig.json
+
+      - name: Run tests
+        run: npm test
+
+  build:
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build Docker image
+        run: docker build -t copilot-flight-recorder:${{ github.sha }} .
+
+      - name: Test Docker health
+        run: |
+          docker run -d --name cfr-test -p 8080:8080 copilot-flight-recorder:${{ github.sha }}
+          sleep 8
+          curl -sf http://localhost:8080/api/health | grep -q '"status":"ok"'
+          docker stop cfr-test
+
+      - name: Push to GHCR
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker tag copilot-flight-recorder:${{ github.sha }} ghcr.io/${{ github.repository }}:${{ github.sha }}
+          docker tag copilot-flight-recorder:${{ github.sha }} ghcr.io/${{ github.repository }}:latest
+          docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository }}:latest
+
+  validate-infra:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Bicep
+        run: az bicep build --file infra/main.bicep --stdout > /dev/null
+
+  deploy:
+    needs: [build, validate-infra]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy infrastructure
+        uses: azure/arm-deploy@v2
+        with:
+          resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          template: infra/main.bicep
+          parameters: >
+            appName=copilot-flight-recorder
+            containerImage=ghcr.io/${{ github.repository }}:${{ github.sha }}
+            msalClientId=${{ secrets.MSAL_CLIENT_ID }}
+            msalTenantId=${{ secrets.MSAL_TENANT_ID }}
+          failOnStdErr: false
+
+      - name: Print app URL
+        run: |
+          echo "Deployed to: $(az containerapp show -n copilot-flight-recorder -g ${{ secrets.AZURE_RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"

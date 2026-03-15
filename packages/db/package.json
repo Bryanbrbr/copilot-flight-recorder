@@ -1,0 +1,25 @@
+{
+  "name": "@cfr/db",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate": "tsx src/migrate.ts",
+    "seed": "tsx src/seed.ts",
+    "setup": "tsx src/migrate.ts && tsx src/seed.ts"
+  },
+  "dependencies": {
+    "@cfr/shared": "*",
+    "drizzle-orm": "^0.44.0",
+    "better-sqlite3": "^11.9.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "drizzle-kit": "^0.31.0",
+    "tsx": "^4.19.0",
+    "typescript": "~5.9.3"
+  }
+}

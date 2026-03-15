@@ -1,0 +1,96 @@
+{
+  "$schema": "https://product-ingestion.azureedge.net/schema/listing/2024-03-01",
+  "product": {
+    "id": "copilot-flight-recorder",
+    "type": "AzureApplication",
+    "displayName": "Copilot Flight Recorder",
+    "publisherDisplayName": "Copilot Governance",
+    "summary": "AI agent governance dashboard for Microsoft 365 Copilot — monitor, audit, and enforce policies across your autonomous agents.",
+    "longSummary": "Copilot Flight Recorder is the control tower for enterprise AI agents. It connects to Microsoft Graph API to monitor Copilot Studio agents, enforce trust policies, detect anomalies, and maintain a complete audit trail for compliance. Built for CISOs, IT admins, and compliance teams managing autonomous AI at scale.",
+    "description": "Copilot Flight Recorder provides real-time governance for Microsoft 365 Copilot agents:\n\n- **Agent Inventory** — Discover and catalog all Copilot agents across your tenant\n- **Trust Scoring** — Algorithmic trust scores based on event history, policy violations, and risk signals\n- **Policy Engine** — Define and enforce guardrails for data access, external communication, and autonomy levels\n- **Incident Management** — Severity-ranked alerts with recommended actions and case activity tracking\n- **Audit Trail** — Immutable, timestamped log of every action for SOC 2 and ISO 27001 compliance\n- **Graph API Sync** — Native Microsoft Graph connector for real-time data from Entra ID, Defender, and Purview\n- **RBAC** — Role-based access control (admin, operator, viewer) enforced across API and UI\n- **Export** — CSV and JSON compliance reports\n\nDeploys as a single container on Azure Container Apps with SQLite persistence.",
+    "categories": [
+      "Security",
+      "IT & Management Tools",
+      "Compliance & Legal"
+    ],
+    "industries": [
+      "Financial Services",
+      "Healthcare",
+      "Government",
+      "Professional Services"
+    ],
+    "keywords": [
+      "copilot",
+      "ai governance",
+      "agent monitoring",
+      "compliance",
+      "audit trail",
+      "trust score",
+      "microsoft graph",
+      "copilot studio",
+      "CISO",
+      "policy enforcement"
+    ],
+    "supportUri": "https://github.com/OWNER/copilot-flight-recorder/issues",
+    "documentationUri": "https://github.com/OWNER/copilot-flight-recorder#readme",
+    "privacyUri": "https://github.com/OWNER/copilot-flight-recorder/blob/main/PRIVACY.md"
+  },
+  "plans": [
+    {
+      "id": "free",
+      "displayName": "Community",
+      "summary": "Up to 5 agents, 7-day event retention, single user",
+      "price": {
+        "currencyCode": "USD",
+        "amount": 0
+      }
+    },
+    {
+      "id": "professional",
+      "displayName": "Professional",
+      "summary": "Unlimited agents, 90-day retention, 10 users, Teams/Slack notifications",
+      "price": {
+        "currencyCode": "USD",
+        "amount": 499,
+        "billingPeriod": "month"
+      }
+    },
+    {
+      "id": "enterprise",
+      "displayName": "Enterprise",
+      "summary": "Unlimited everything, 365-day retention, RBAC, SSO, SLA, dedicated support",
+      "price": {
+        "currencyCode": "USD",
+        "amount": 1999,
+        "billingPeriod": "month"
+      }
+    }
+  ],
+  "technicalConfiguration": {
+    "deploymentType": "AzureContainerApp",
+    "containerImage": "ghcr.io/OWNER/copilot-flight-recorder:latest",
+    "requiredPermissions": [
+      "User.Read.All",
+      "SecurityEvents.Read.All",
+      "AuditLog.Read.All",
+      "Reports.Read.All"
+    ],
+    "environmentVariables": [
+      {
+        "name": "MSAL_CLIENT_ID",
+        "description": "Azure AD app registration client ID",
+        "required": true
+      },
+      {
+        "name": "MSAL_TENANT_ID",
+        "description": "Azure AD tenant ID",
+        "required": true
+      },
+      {
+        "name": "DATABASE_PATH",
+        "description": "SQLite database file path",
+        "default": "/data/flight_recorder.db"
+      }
+    ]
+  }
+}

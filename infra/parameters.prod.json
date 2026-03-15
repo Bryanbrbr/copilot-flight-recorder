@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "value": "copilot-flight-recorder"
+    },
+    "containerImage": {
+      "value": "ghcr.io/OWNER/copilot-flight-recorder:latest"
+    },
+    "msalClientId": {
+      "value": ""
+    },
+    "msalTenantId": {
+      "value": "common"
+    }
+  }
+}

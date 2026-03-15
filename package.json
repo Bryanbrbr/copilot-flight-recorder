@@ -1,0 +1,25 @@
+{
+  "name": "copilot-flight-recorder",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:api & npm run dev:web",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate": "npm run migrate --workspace=packages/db",
+    "db:seed": "npm run seed --workspace=packages/db",
+    "db:setup": "npm run setup --workspace=packages/db"
+  },
+  "dependencies": {
+    "@azure/msal-browser": "^5.5.0",
+    "@azure/msal-react": "^5.0.7",
+    "jose": "^6.2.1"
+  }
+}
