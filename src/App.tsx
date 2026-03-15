@@ -18,6 +18,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/auth'
 import { LoginPage } from '@/components/LoginPage'
 import { LandingPage } from '@/views/LandingPage'
+import { FeaturesPage } from '@/views/FeaturesPage'
+import { PricingPage } from '@/views/PricingPage'
 import { setApiTokenProvider } from '@/services/apiClient'
 import { LiveEventFeed } from '@/components/LiveEventFeed'
 import { ShortcutsHelp } from '@/components/ShortcutsHelp'
@@ -72,6 +74,8 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingRoute />} />
+      <Route path="/features" element={<FeaturesPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
       <Route path="/app" element={<AppRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

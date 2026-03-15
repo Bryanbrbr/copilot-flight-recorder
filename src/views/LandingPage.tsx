@@ -1,10 +1,11 @@
 /**
  * Marketing landing page for Copilot Flight Recorder.
- * Shown when the user is not authenticated and auth is configured,
- * or accessible at /landing for demo purposes.
+ * Uses LandingLayout for shared nav + footer.
  */
 import { useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '@/auth'
+import { LandingLayout } from './LandingLayout'
 
 function useScrollReveal() {
   const ref = useRef<HTMLDivElement>(null)
@@ -88,7 +89,6 @@ function ProductPreview({ onClick }: { onClick: () => void }) {
         </div>
       </div>
       <div className="browser-chrome-body">
-        {/* Mini dashboard mockup built in pure CSS/HTML */}
         <div className="preview-dashboard">
           <div className="preview-sidebar">
             <div className="preview-brand">◈ CFR</div>
@@ -175,28 +175,11 @@ function ProductPreview({ onClick }: { onClick: () => void }) {
 export function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
   const navigate = useNavigate()
   const goToApp = () => navigate('/app')
+
   return (
-    <div className="landing">
+    <LandingLayout>
       {/* ─── Hero ─────────────────────────────────────────────────── */}
       <header className="landing-hero">
-        <nav className="landing-nav">
-          <div className="landing-logo">
-            <span className="landing-logo-icon">◈</span>
-            <span>Copilot Flight Recorder</span>
-          </div>
-          <div className="landing-nav-links">
-            <a href="#preview">Product</a>
-            <a href="#features">Features</a>
-            <a href="#pricing">Pricing</a>
-            <button type="button" className="landing-cta-small" onClick={goToApp}>
-              Try demo
-            </button>
-            <button type="button" className="landing-cta-small" onClick={onGetStarted}>
-              Sign in
-            </button>
-          </div>
-        </nav>
-
         <div className="landing-hero-content">
           <span className="landing-badge">For Microsoft 365 administrators</span>
           <h1>Govern your Copilot agents<br />before they govern you.</h1>
@@ -208,7 +191,7 @@ export function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
             <button type="button" className="landing-cta" onClick={onGetStarted}>
               Start free trial
             </button>
-            <a href="#preview" className="landing-cta-secondary">See the product</a>
+            <button type="button" className="landing-cta-secondary" onClick={goToApp}>Try the demo</button>
           </div>
           <div className="landing-hero-stats">
             <div><strong>4</strong><span>AI agent types monitored</span></div>
@@ -263,24 +246,24 @@ export function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
         </p>
         <div className="landing-problem-grid">
           <div className="landing-problem-card">
-            <span className="landing-problem-icon">🔓</span>
+            <span className="landing-problem-icon">&#x1f513;</span>
             <h3>No agent-level audit trail</h3>
             <p>Copilot actions happen silently. When something goes wrong, you have no forensic path to follow.</p>
           </div>
           <div className="landing-problem-card">
-            <span className="landing-problem-icon">📊</span>
+            <span className="landing-problem-icon">&#x1f4ca;</span>
             <h3>No centralized governance</h3>
             <p>Policies live across Purview, Teams admin, and Copilot Studio — with no single pane of glass.</p>
           </div>
           <div className="landing-problem-card">
-            <span className="landing-problem-icon">⚡</span>
+            <span className="landing-problem-icon">&#x26a1;</span>
             <h3>No real-time enforcement</h3>
             <p>By the time you discover a policy violation, the data has already left your tenant.</p>
           </div>
         </div>
       </RevealSection>
 
-      {/* ─── Features ─────────────────────────────────────────────── */}
+      {/* ─── Features teaser ─────────────────────────────────────── */}
       <RevealSection className="landing-section" id="features">
         <span className="landing-section-badge">The solution</span>
         <h2>Everything you need to govern AI agents at scale.</h2>
@@ -300,61 +283,14 @@ export function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
             <h3>Trust scoring</h3>
             <p>Every agent gets a dynamic trust score based on event history, policy compliance, and incident frequency.</p>
           </div>
-          <div className="landing-feature">
-            <div className="landing-feature-number">04</div>
-            <h3>Microsoft Graph integration</h3>
-            <p>Pull real agent data, security alerts, and audit logs directly from your M365 tenant via Graph API.</p>
-          </div>
-          <div className="landing-feature">
-            <div className="landing-feature-number">05</div>
-            <h3>Compliance exports</h3>
-            <p>One-click CSV and JSON exports for SOC 2, ISO 27001, and internal audit requirements.</p>
-          </div>
-          <div className="landing-feature">
-            <div className="landing-feature-number">06</div>
-            <h3>Teams & Slack alerts</h3>
-            <p>Instant notifications when critical incidents fire, trust scores drop, or policy violations occur.</p>
-          </div>
+        </div>
+        <div className="landing-section-cta">
+          <Link to="/features" className="landing-cta-secondary">See all features</Link>
         </div>
       </RevealSection>
 
-      {/* ─── Architecture ─────────────────────────────────────────── */}
-      <RevealSection className="landing-section landing-section-alt" id="architecture">
-        <span className="landing-section-badge">Architecture</span>
-        <h2>Built for enterprise. Deployed on Azure.</h2>
-        <p className="landing-section-sub">
-          Tenant-isolated, MSAL-authenticated, and designed to run as a first-party Azure Container App.
-        </p>
-        <div className="landing-arch-grid">
-          <div className="landing-arch-card">
-            <strong>Frontend</strong>
-            <p>React 19 + TypeScript + Vite</p>
-          </div>
-          <div className="landing-arch-card">
-            <strong>API</strong>
-            <p>Fastify + Drizzle ORM</p>
-          </div>
-          <div className="landing-arch-card">
-            <strong>Auth</strong>
-            <p>Microsoft Entra ID (MSAL)</p>
-          </div>
-          <div className="landing-arch-card">
-            <strong>Data</strong>
-            <p>SQLite (dev) / Azure SQL (prod)</p>
-          </div>
-          <div className="landing-arch-card">
-            <strong>Integration</strong>
-            <p>Microsoft Graph API</p>
-          </div>
-          <div className="landing-arch-card">
-            <strong>Deploy</strong>
-            <p>Azure Container Apps + CI/CD</p>
-          </div>
-        </div>
-      </RevealSection>
-
-      {/* ─── Pricing ──────────────────────────────────────────────── */}
-      <RevealSection className="landing-section" id="pricing">
+      {/* ─── Pricing teaser ──────────────────────────────────────── */}
+      <RevealSection className="landing-section landing-section-alt" id="pricing">
         <span className="landing-section-badge">Pricing</span>
         <h2>Simple, transparent pricing.</h2>
         <div className="landing-pricing-grid">
@@ -366,7 +302,6 @@ export function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
               <li>Up to 5 agents</li>
               <li>Seed data mode</li>
               <li>Basic dashboard</li>
-              <li>Community support</li>
             </ul>
             <button type="button" className="landing-cta-secondary" onClick={onGetStarted}>Get started</button>
           </div>
@@ -379,9 +314,6 @@ export function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
               <li>Unlimited agents</li>
               <li>Graph API sync</li>
               <li>Full audit trail</li>
-              <li>Teams & Slack alerts</li>
-              <li>CSV/JSON exports</li>
-              <li>RBAC roles</li>
               <li>Priority support</li>
             </ul>
             <button type="button" className="landing-cta" onClick={onGetStarted}>Start free trial</button>
@@ -391,14 +323,15 @@ export function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
             <div className="landing-price">Custom</div>
             <p>For large organizations with compliance needs</p>
             <ul>
-              <li>Everything in Professional</li>
-              <li>Dedicated Azure deployment</li>
-              <li>SSO & SCIM provisioning</li>
-              <li>Custom policies & connectors</li>
-              <li>SLA & dedicated support</li>
+              <li>Everything in Pro</li>
+              <li>Dedicated deployment</li>
+              <li>SSO & SCIM</li>
             </ul>
             <button type="button" className="landing-cta-secondary" onClick={onGetStarted}>Contact sales</button>
           </div>
+        </div>
+        <div className="landing-section-cta">
+          <Link to="/pricing" className="landing-cta-secondary">Compare all plans</Link>
         </div>
       </RevealSection>
 
@@ -410,40 +343,6 @@ export function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
           Start your free trial
         </button>
       </section>
-
-      {/* ─── Footer ───────────────────────────────────────────────── */}
-      <footer className="landing-footer">
-        <div className="landing-footer-content">
-          <div>
-            <span className="landing-logo-icon">◈</span>
-            <strong>Copilot Flight Recorder</strong>
-            <p>The governance layer for Microsoft Copilot agents.</p>
-          </div>
-          <div className="landing-footer-links">
-            <div>
-              <h4>Product</h4>
-              <a href="#preview">Demo</a>
-              <a href="#features">Features</a>
-              <a href="#pricing">Pricing</a>
-              <a href="#architecture">Architecture</a>
-            </div>
-            <div>
-              <h4>Resources</h4>
-              <a href="https://learn.microsoft.com/en-us/graph/" target="_blank" rel="noopener noreferrer">Graph API docs</a>
-              <a href="https://entra.microsoft.com" target="_blank" rel="noopener noreferrer">Entra ID</a>
-              <a href="https://azure.microsoft.com" target="_blank" rel="noopener noreferrer">Azure</a>
-            </div>
-            <div>
-              <h4>Legal</h4>
-              <a href="#privacy">Privacy Policy</a>
-              <a href="#terms">Terms of Service</a>
-            </div>
-          </div>
-        </div>
-        <div className="landing-footer-bottom">
-          <p>&copy; {new Date().getFullYear()} Copilot Flight Recorder. All rights reserved.</p>
-        </div>
-      </footer>
-    </div>
+    </LandingLayout>
   )
 }

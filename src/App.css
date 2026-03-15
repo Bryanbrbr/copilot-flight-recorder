@@ -157,12 +157,16 @@
 }
 
 .landing-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 48px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 16px 48px;
+  background: rgba(15, 28, 54, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .landing-logo {
@@ -5757,4 +5761,238 @@ th {
   .landing-pricing-card.featured {
     border-color: #3b82f6;
   }
+}
+
+/* ─── Shared Landing Nav (from LandingLayout) ─────────────────── */
+
+.landing > .landing-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 48px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.landing-nav .landing-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #14233f;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.landing-nav .landing-nav-links a {
+  text-decoration: none;
+  color: #475569;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: color 0.15s;
+}
+
+.landing-nav .landing-nav-links a:hover {
+  color: #2563eb;
+}
+
+@media (prefers-color-scheme: dark) {
+  .landing > .landing-nav {
+    background: rgba(15, 23, 42, 0.92);
+    border-bottom-color: #1e293b;
+  }
+  .landing-nav .landing-logo {
+    color: #f1f5f9;
+  }
+  .landing-nav .landing-nav-links a {
+    color: #94a3b8;
+  }
+  .landing-nav .landing-nav-links a:hover {
+    color: #60a5fa;
+  }
+}
+
+/* ─── Features Hero ───────────────────────────────────────────── */
+
+.features-hero {
+  text-align: center;
+  padding: 100px 48px 64px;
+  background: linear-gradient(135deg, #0f1c36 0%, #1a2e52 50%, #0f1c36 100%);
+  color: #ffffff;
+}
+
+.features-hero h1 {
+  font-size: 2.8rem;
+  line-height: 1.15;
+  color: #ffffff;
+  margin: 16px 0 20px;
+  letter-spacing: -0.03em;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.features-hero .landing-section-sub {
+  color: #94a3b8;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ─── Feature Detail Lists ────────────────────────────────────── */
+
+.feature-details {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feature-details li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 0.88rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.feature-details li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+@media (prefers-color-scheme: dark) {
+  .feature-details li {
+    color: #94a3b8;
+  }
+  .feature-details li::before {
+    color: #60a5fa;
+  }
+}
+
+/* ─── Pricing Comparison Table ────────────────────────────────── */
+
+.pricing-comparison-table {
+  max-width: 900px;
+  margin: 40px auto 0;
+  overflow-x: auto;
+}
+
+.pricing-comparison-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.pricing-comparison-table th,
+.pricing-comparison-table td {
+  padding: 14px 20px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.pricing-comparison-table th {
+  font-weight: 700;
+  color: #14233f;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #f8fafc;
+}
+
+.pricing-comparison-table td {
+  color: #475569;
+}
+
+.pricing-comparison-table .highlight-col {
+  background: rgba(37, 99, 235, 0.04);
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.pricing-comparison-table th.highlight-col {
+  background: rgba(37, 99, 235, 0.08);
+  color: #1e40af;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pricing-comparison-table th {
+    color: #f1f5f9;
+    background: #1e293b;
+  }
+  .pricing-comparison-table td {
+    color: #94a3b8;
+    border-bottom-color: #1e293b;
+  }
+  .pricing-comparison-table .highlight-col {
+    background: rgba(59, 130, 246, 0.08);
+    color: #60a5fa;
+  }
+  .pricing-comparison-table th.highlight-col {
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+  }
+}
+
+/* ─── Pricing FAQ ─────────────────────────────────────────────── */
+
+.pricing-faq-grid {
+  max-width: 800px;
+  margin: 40px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pricing-faq-item {
+  padding: 24px 28px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.pricing-faq-item h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: #14233f;
+}
+
+.pricing-faq-item p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pricing-faq-item {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  .pricing-faq-item h3 {
+    color: #f1f5f9;
+  }
+  .pricing-faq-item p {
+    color: #94a3b8;
+  }
+}
+
+/* ─── Landing Section CTA link ────────────────────────────────── */
+
+.landing-section-cta {
+  text-align: center;
+  margin-top: 32px;
+}
+
+.landing-section-cta a {
+  text-decoration: none;
 }
