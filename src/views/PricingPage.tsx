@@ -2,7 +2,6 @@
  * Dedicated Pricing page with plan comparison and FAQ.
  */
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/auth'
 import { LandingLayout } from './LandingLayout'
 
 const faqs = [
@@ -30,11 +29,8 @@ const faqs = [
 
 export function PricingPage() {
   const navigate = useNavigate()
-  const { isAuthenticated, login } = useAuth()
-
   const handleGetStarted = () => {
-    if (isAuthenticated) navigate('/app')
-    else login()
+    navigate('/app')
   }
 
   return (

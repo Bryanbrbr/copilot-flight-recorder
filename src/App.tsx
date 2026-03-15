@@ -15,6 +15,7 @@ import { getEffectivePolicyRolloutMode } from '@/lib/policyHelpers'
 import { formatCaseAge } from '@/lib/formatCaseAge'
 import { getReviewState } from '@/lib/caseHelpers'
 import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/auth'
 import { LoginPage } from '@/components/LoginPage'
 import { LandingPage } from '@/views/LandingPage'
@@ -40,6 +41,8 @@ function LandingRoute() {
 
 function AppRoute() {
   const { isAuthenticated, isDemoMode, isLoading: authLoading, user, logout, getAccessToken } = useAuth()
+  const [searchParams] = useSearchParams()
+  const demoRequested = searchParams.get('demo') === '1'
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -58,11 +61,18 @@ function AppRoute() {
     )
   }
 
-  if (!isAuthenticated) {
-    return <LoginPage />
+  // User is authenticated (via MSAL or email) — show the app
+  if (isAuthenticated && !isDemoMode) {
+    return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} onLogout={logout} isDemoMode={false} />
   }
 
-  return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} onLogout={logout} isDemoMode={isDemoMode} />
+  // Demo mode: only show if explicitly requested via ?demo=1
+  if (isDemoMode && demoRequested) {
+    return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} onLogout={logout} isDemoMode={true} />
+  }
+
+  // Otherwise show login page
+  return <LoginPage />
 }
 
 function App() {

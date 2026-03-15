@@ -1174,14 +1174,26 @@
 
 .signin-modal-input-group input {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border: 1px solid #8a8886;
-  border-radius: 2px;
+  border-radius: 4px;
   font-size: 0.9rem;
   font-family: inherit;
-  background: #f3f2f1;
-  color: #a19f9d;
+  background: #fafbfd;
+  color: #242424;
   box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.signin-modal-input-group input:focus {
+  border-color: #0078d4;
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.15);
+  background: #fff;
+}
+
+.signin-modal-input-group input::placeholder {
+  color: #a19f9d;
 }
 
 .signin-modal-info {
@@ -1230,11 +1242,96 @@
   text-align: center;
 }
 
+.signin-modal-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #edebe9;
+  margin-bottom: 20px;
+}
+.signin-modal-tab {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: none;
+  color: #616161;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.signin-modal-tab.active {
+  color: #0078d4;
+  border-bottom-color: #0078d4;
+}
+.signin-modal-tab:hover:not(.active) {
+  color: #242424;
+}
+
+.signin-modal-error {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  color: #dc2626;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.signin-modal-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #a19f9d;
+  font-size: 0.8rem;
+  margin: 16px 0;
+}
+.signin-modal-divider::before,
+.signin-modal-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #edebe9;
+}
+
+.signin-modal-microsoft-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid #8a8886;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #242424;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.signin-modal-microsoft-btn:hover {
+  background: #f3f2f1;
+  border-color: #605e5c;
+}
+
 .signin-modal-footer {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   color: #a19f9d;
   text-align: center;
   margin: 0;
+}
+.signin-modal-switch {
+  background: none;
+  border: none;
+  color: #0078d4;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
 }
 
 /* ─── Responsive ───────────────────────────────────────────────── */

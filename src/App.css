@@ -15,14 +15,14 @@
 
 .login-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
   background: #ffffff;
   border: 1px solid #d9e2ee;
   border-radius: 18px;
-  padding: 48px 40px;
+  padding: 40px 36px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 24px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
 }
 
@@ -68,12 +68,125 @@
   cursor: not-allowed;
 }
 
+.login-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e5eaf1;
+}
+.login-tab {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: none;
+  color: #5d6e88;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.login-tab.active {
+  color: #0078d4;
+  border-bottom-color: #0078d4;
+}
+.login-tab:hover:not(.active) {
+  color: #14233f;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.login-field label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #14233f;
+}
+.login-field input {
+  padding: 12px 14px;
+  border: 1px solid #d8e1ed;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #14233f;
+  background: #fafbfd;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+.login-field input:focus {
+  border-color: #0078d4;
+  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.12);
+  background: #fff;
+}
+.login-field input::placeholder {
+  color: #a0b0c5;
+}
+
+.login-error {
+  margin: 0;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.login-button.email-login {
+  background: #0078d4;
+  color: #ffffff;
+  border-color: #0078d4;
+}
+.login-button.email-login:hover:not(:disabled) {
+  background: #106ebe;
+  border-color: #106ebe;
+  box-shadow: 0 2px 8px rgba(0, 120, 212, 0.25);
+}
+
+.login-button.microsoft-login {
+  background: #ffffff;
+  color: #10203a;
+  border-color: #d8e1ed;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #8a9bb5;
+  font-size: 0.82rem;
+}
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e5eaf1;
+}
+
 .login-footer {
   margin: 0;
   text-align: center;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: #8a9bb5;
   line-height: 1.5;
+}
+.login-switch-link {
+  background: none;
+  border: none;
+  color: #0078d4;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
 }
 
 /* --- User profile (sidebar bottom) --- */

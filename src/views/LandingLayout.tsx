@@ -5,21 +5,65 @@
 import '@/styles/Landing.css'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '@/auth'
+import { useAuth, signIn, signUp, notifyLocalSessionChange } from '@/auth'
+import { isAuthConfigured } from '@/auth/msalConfig'
 
 export function LandingLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const { isAuthenticated, isDemoMode, login } = useAuth()
   const [showSignInModal, setShowSignInModal] = useState(false)
+  const [modalTab, setModalTab] = useState<'signin' | 'signup'>('signin')
+  const [modalName, setModalName] = useState('')
+  const [modalEmail, setModalEmail] = useState('')
+  const [modalPassword, setModalPassword] = useState('')
+  const [modalError, setModalError] = useState('')
+  const [modalSubmitting, setModalSubmitting] = useState(false)
 
   const handleSignIn = () => {
-    if (isDemoMode) {
-      // Auth not configured — show info modal
-      setShowSignInModal(true)
-    } else if (isAuthenticated) {
+    if (isAuthenticated && !isDemoMode) {
       navigate('/app')
     } else {
-      login()
+      setShowSignInModal(true)
+      setModalTab('signin')
+      resetModalForm()
+    }
+  }
+
+  const resetModalForm = () => {
+    setModalName('')
+    setModalEmail('')
+    setModalPassword('')
+    setModalError('')
+    setModalSubmitting(false)
+  }
+
+  const handleModalEmailSignIn = (e: React.FormEvent) => {
+    e.preventDefault()
+    setModalError('')
+    setModalSubmitting(true)
+    const result = signIn(modalEmail, modalPassword)
+    if (result.ok) {
+      notifyLocalSessionChange()
+      setShowSignInModal(false)
+      navigate('/app')
+    } else {
+      setModalError(result.error)
+      setModalSubmitting(false)
+    }
+  }
+
+  const handleModalEmailSignUp = (e: React.FormEvent) => {
+    e.preventDefault()
+    setModalError('')
+    setModalSubmitting(true)
+    const result = signUp(modalName, modalEmail, modalPassword)
+    if (result.ok) {
+      notifyLocalSessionChange()
+      setShowSignInModal(false)
+      navigate('/app')
+    } else {
+      setModalError(result.error)
+      setModalSubmitting(false)
     }
   }
 
@@ -33,7 +77,7 @@ export function LandingLayout({ children }: { children: React.ReactNode }) {
         <div className="landing-nav-links">
           <Link to="/features">Features</Link>
           <Link to="/pricing">Pricing</Link>
-          <button type="button" className="landing-cta-small" onClick={() => navigate('/app')}>
+          <button type="button" className="landing-cta-small" onClick={() => navigate('/app?demo=1')}>
             Try demo
           </button>
           <button type="button" className="landing-cta-small landing-signin-btn" onClick={handleSignIn}>
@@ -76,51 +120,119 @@ export function LandingLayout({ children }: { children: React.ReactNode }) {
         </div>
       </footer>
 
-      {/* Microsoft Sign-in Modal */}
+      {/* Sign-in Modal */}
       {showSignInModal && (
         <div className="signin-modal-overlay" onClick={() => setShowSignInModal(false)}>
           <div className="signin-modal" onClick={(e) => e.stopPropagation()}>
             <button type="button" className="signin-modal-close" onClick={() => setShowSignInModal(false)} aria-label="Close">
               &times;
             </button>
+
             <div className="signin-modal-logo">
-              <svg width="24" height="24" viewBox="0 0 21 21" fill="none">
-                <rect x="1" y="1" width="9" height="9" fill="#f25022" />
-                <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
-                <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
-                <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
-              </svg>
-              <span>Microsoft</span>
+              <span className="landing-logo-icon" style={{ fontSize: '1.2rem' }}>◈</span>
+              <span>Copilot Flight Recorder</span>
             </div>
-            <h2>Sign in</h2>
-            <p>Use your Microsoft 365 work account to connect your tenant and monitor your real Copilot agents.</p>
+            <h2>{modalTab === 'signin' ? 'Sign in' : 'Create account'}</h2>
 
-            <div className="signin-modal-input-group">
-              <label htmlFor="signin-email">Work or school account</label>
-              <input id="signin-email" type="email" placeholder="admin@yourcompany.onmicrosoft.com" disabled />
-            </div>
-
-            <div className="signin-modal-info">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="7" stroke="#0078d4" strokeWidth="1.5" fill="none" />
-                <text x="8" y="12" textAnchor="middle" fill="#0078d4" fontSize="11" fontWeight="700">i</text>
-              </svg>
-              <p>
-                Microsoft Entra ID sign-in is coming soon. In the meantime, explore the full product with our interactive demo using sample data.
-              </p>
-            </div>
-
-            <div className="signin-modal-actions">
-              <button type="button" className="landing-cta" onClick={() => { setShowSignInModal(false); navigate('/app') }}>
-                Try the demo
+            {/* Tab switcher */}
+            <div className="signin-modal-tabs">
+              <button
+                type="button"
+                className={`signin-modal-tab ${modalTab === 'signin' ? 'active' : ''}`}
+                onClick={() => { setModalTab('signin'); setModalError('') }}
+              >
+                Sign in
               </button>
-              <a href="mailto:sales@copilotflightrecorder.com?subject=Early%20access%20request" className="landing-cta-secondary">
-                Request early access
-              </a>
+              <button
+                type="button"
+                className={`signin-modal-tab ${modalTab === 'signup' ? 'active' : ''}`}
+                onClick={() => { setModalTab('signup'); setModalError('') }}
+              >
+                Create account
+              </button>
             </div>
+
+            {/* Email/password form */}
+            <form onSubmit={modalTab === 'signin' ? handleModalEmailSignIn : handleModalEmailSignUp}>
+              {modalTab === 'signup' && (
+                <div className="signin-modal-input-group">
+                  <label htmlFor="modal-name">Full name</label>
+                  <input
+                    id="modal-name"
+                    type="text"
+                    placeholder="John Doe"
+                    value={modalName}
+                    onChange={e => setModalName(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+              <div className="signin-modal-input-group">
+                <label htmlFor="modal-email">Email address</label>
+                <input
+                  id="modal-email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={modalEmail}
+                  onChange={e => setModalEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="signin-modal-input-group">
+                <label htmlFor="modal-password">Password</label>
+                <input
+                  id="modal-password"
+                  type="password"
+                  placeholder={modalTab === 'signup' ? 'At least 6 characters' : 'Your password'}
+                  value={modalPassword}
+                  onChange={e => setModalPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              {modalError && <p className="signin-modal-error">{modalError}</p>}
+
+              <div className="signin-modal-actions">
+                <button type="submit" className="landing-cta" disabled={modalSubmitting}>
+                  {modalSubmitting
+                    ? 'Please wait...'
+                    : modalTab === 'signin'
+                      ? 'Sign in'
+                      : 'Create account'}
+                </button>
+              </div>
+            </form>
+
+            {/* Microsoft sign-in option */}
+            {isAuthConfigured && (
+              <>
+                <div className="signin-modal-divider"><span>or</span></div>
+                <button
+                  type="button"
+                  className="signin-modal-microsoft-btn"
+                  onClick={() => { setShowSignInModal(false); login() }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 21 21" fill="none">
+                    <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                    <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                    <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+                  </svg>
+                  Sign in with Microsoft
+                </button>
+              </>
+            )}
 
             <p className="signin-modal-footer">
-              Protected by Microsoft Entra ID
+              {modalTab === 'signin' ? "Don't have an account? " : 'Already have an account? '}
+              <button
+                type="button"
+                className="signin-modal-switch"
+                onClick={() => { setModalTab(modalTab === 'signin' ? 'signup' : 'signin'); setModalError('') }}
+              >
+                {modalTab === 'signin' ? 'Create one' : 'Sign in'}
+              </button>
             </p>
           </div>
         </div>

@@ -4,7 +4,6 @@
  */
 import { useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '@/auth'
 import { LandingLayout } from './LandingLayout'
 
 function useScrollReveal() {
@@ -174,7 +173,7 @@ function ProductPreview({ onClick }: { onClick: () => void }) {
 
 export function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
   const navigate = useNavigate()
-  const goToApp = () => navigate('/app')
+  const goToDemo = () => navigate('/app?demo=1')
 
   return (
     <LandingLayout>
@@ -191,7 +190,7 @@ export function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
             <button type="button" className="landing-cta" onClick={onGetStarted}>
               Start free trial
             </button>
-            <button type="button" className="landing-cta-secondary" onClick={goToApp}>Try the demo</button>
+            <button type="button" className="landing-cta-secondary" onClick={goToDemo}>Try the demo</button>
           </div>
           <div className="landing-hero-stats">
             <div><strong>4</strong><span>AI agent types monitored</span></div>
