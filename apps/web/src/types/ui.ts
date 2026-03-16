@@ -1,4 +1,4 @@
-export type ViewId = 'dashboard' | 'timeline' | 'alerts' | 'governance'
+export type ViewId = 'dashboard' | 'timeline' | 'alerts' | 'governance' | 'settings'
 
 export type CaseActivityEntry = {
   id: string

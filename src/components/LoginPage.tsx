@@ -15,11 +15,11 @@ export function LoginPage() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const handleEmailSignIn = (e: React.FormEvent) => {
+  const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSubmitting(true)
-    const result = signIn(email, password)
+    const result = await signIn(email, password)
     if (result.ok) {
       notifyLocalSessionChange()
     } else {
@@ -28,11 +28,11 @@ export function LoginPage() {
     }
   }
 
-  const handleEmailSignUp = (e: React.FormEvent) => {
+  const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSubmitting(true)
-    const result = signUp(name, email, password)
+    const result = await signUp(name, email, password)
     if (result.ok) {
       notifyLocalSessionChange()
     } else {
@@ -105,11 +105,11 @@ export function LoginPage() {
             <input
               id="login-password"
               type="password"
-              placeholder={tab === 'signup' ? 'At least 6 characters' : 'Your password'}
+              placeholder={tab === 'signup' ? 'At least 8 characters' : 'Your password'}
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={8}
               autoComplete={tab === 'signin' ? 'current-password' : 'new-password'}
             />
           </div>

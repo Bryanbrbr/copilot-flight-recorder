@@ -29,8 +29,10 @@ async function graphFetch<T>(token: GraphToken, path: string, useBeta = false): 
   })
 
   if (!res.ok) {
+    // Log full error for debugging but don't expose Graph API internals to client
     const body = await res.text().catch(() => '')
-    throw new Error(`Graph API ${res.status}: ${res.statusText} — ${body}`)
+    console.error(`[graph] API error ${res.status}: ${body}`)
+    throw new Error(`Graph API request failed (${res.status})`)
   }
 
   return res.json()

@@ -63,12 +63,12 @@ function AppRoute() {
 
   // User is authenticated (via MSAL or email) — show the app
   if (isAuthenticated && !isDemoMode) {
-    return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} onLogout={logout} isDemoMode={false} />
+    return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} tenantId={user?.tenantId ?? ''} onLogout={logout} isDemoMode={false} />
   }
 
   // Demo mode: only show if explicitly requested via ?demo=1
   if (isDemoMode && demoRequested) {
-    return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} onLogout={logout} isDemoMode={true} />
+    return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} tenantId={user?.tenantId ?? 'tenant-northwind'} onLogout={logout} isDemoMode={true} />
   }
 
   // Otherwise show login page
@@ -83,14 +83,18 @@ function App() {
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
+      <Route path="/login" element={<AppRoute />} />
       <Route path="/app" element={<AppRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
 
-function AuthenticatedApp({ userName, userEmail, onLogout, isDemoMode }: { userName: string; userEmail: string; onLogout: () => void; isDemoMode: boolean }) {
+function AuthenticatedApp({ userName, userEmail, tenantId: _tid, onLogout, isDemoMode }: { userName: string; userEmail: string; tenantId: string; onLogout: () => void; isDemoMode: boolean }) {
+  void _tid // suppress unused var warning
   const navigate = useNavigate()
+  const [tenantName, setTenantName] = useState<string | null>(null)
+  const hasAgents = useWorkspaceStore((s) => s.workspace.agents.length > 0)
   const {
     workspace,
     activeView,
@@ -116,6 +120,26 @@ function AuthenticatedApp({ userName, userEmail, onLogout, isDemoMode }: { userN
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false)
   const toggleHelp = useCallback(() => setShowShortcutsHelp((prev) => !prev), [])
   useKeyboardShortcuts({ onToggleHelp: toggleHelp })
+
+  // Reload workspace data from API when app mounts (after auth is ready)
+  useEffect(() => {
+    useWorkspaceStore.getState().loadFromApi()
+  }, [])
+
+  // Load tenant name
+  useEffect(() => {
+    if (isDemoMode) {
+      setTenantName('Northwind Global')
+      return
+    }
+    const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'
+    fetch(`${API_BASE}/auth/me`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('cfr_token') ?? ''}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.user?.tenantName) setTenantName(data.user.tenantName) })
+      .catch(() => {})
+  }, [isDemoMode])
 
   const selectedAgent = getSelectedAgent()
   const liveAlerts = getLiveAlerts()
@@ -236,9 +260,9 @@ function AuthenticatedApp({ userName, userEmail, onLogout, isDemoMode }: { userN
         )}
 
         <div className="tenant-card">
-          <span className="eyebrow">Sample tenant</span>
-          <strong>Northwind Global</strong>
-          <p>Governed rollout with review, publishing controls, and tenant-level visibility.</p>
+          <span className="eyebrow">{isDemoMode ? 'Sample tenant' : 'Your workspace'}</span>
+          <strong>{tenantName ?? userName + "'s Workspace"}</strong>
+          <p>{isDemoMode ? 'Governed rollout with review, publishing controls, and tenant-level visibility.' : 'Monitor agents, enforce policies, and manage incidents.'}</p>
           <div className="tenant-summary-grid">
             {tenantSummary.map((item) => (
               <div key={item.label} className="tenant-summary-item">
@@ -300,7 +324,7 @@ function AuthenticatedApp({ userName, userEmail, onLogout, isDemoMode }: { userN
               <input id="workspace-search" type="text" placeholder="Search assets, incidents, or policies" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} />
             </label>
             <div className="topbar-meta">
-              <span className="context-chip">Northwind Global</span>
+              <span className="context-chip">{tenantName ?? userName + "'s Workspace"}</span>
               <span className="context-chip">Updated {latestWorkspaceEvent ? formatTimestamp(latestWorkspaceEvent.timestamp) : 'now'}</span>
               <span className="context-chip">{selectedAgent.name}</span>
               <span className="trust-chip large">Trust {getInsight(workspace, selectedAgent.id)?.trustScore ?? '--'}</span>
@@ -407,9 +431,58 @@ function AuthenticatedApp({ userName, userEmail, onLogout, isDemoMode }: { userN
           </section>
         ) : null}
 
-        {activeView === 'dashboard' ? (
+        {!isDemoMode && !hasAgents && activeView === 'dashboard' ? (
+          <section className="onboarding-panel">
+            <div className="onboarding-hero">
+              <h2>Welcome to Copilot Flight Recorder</h2>
+              <p>Connect your first AI agent to start monitoring, governing, and securing your Copilot deployments.</p>
+            </div>
+            <div className="onboarding-steps">
+              <div className="onboarding-step">
+                <span className="onboarding-step-number">1</span>
+                <div>
+                  <strong>Generate an API Key</strong>
+                  <p>Go to <button type="button" className="onboarding-link" onClick={() => openView('settings')}>Settings</button> and create your first API key.</p>
+                </div>
+              </div>
+              <div className="onboarding-step">
+                <span className="onboarding-step-number">2</span>
+                <div>
+                  <strong>Send your first event</strong>
+                  <p>Use the API to send agent telemetry. Example:</p>
+                  <pre className="onboarding-code">{`curl -X POST ${import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'}/ingest/events \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: YOUR_API_KEY" \\
+  -d '{
+    "agentId": "my-copilot",
+    "agentName": "My First Copilot",
+    "type": "message.received",
+    "title": "User query received",
+    "summary": "First test event from my agent",
+    "outcome": "success",
+    "riskScore": 10,
+    "actor": "My Copilot"
+  }'`}</pre>
+                </div>
+              </div>
+              <div className="onboarding-step">
+                <span className="onboarding-step-number">3</span>
+                <div>
+                  <strong>Configure policies</strong>
+                  <p>Go to <button type="button" className="onboarding-link" onClick={() => openView('governance')}>Policies</button> to review and customize your governance rules.</p>
+                </div>
+              </div>
+            </div>
+            <div className="onboarding-actions">
+              <button type="button" className="action-button primary" onClick={() => openView('settings')}>Go to Settings</button>
+              <button type="button" className="action-button subtle" onClick={() => navigate('/app?demo=1')}>Explore the demo instead</button>
+            </div>
+          </section>
+        ) : null}
+
+        {activeView === 'dashboard' && (isDemoMode || hasAgents) ? (
           <DashboardView selectedAgent={selectedAgent} alerts={liveAlerts} rolloutModes={policyRolloutModes}
-            onOpenIncident={(alertId) => { if (alertId) { setSelectedAlertId(alertId) } openView('alerts') }}
+            onOpenIncident={(alertId: string | undefined) => { if (alertId) { setSelectedAlertId(alertId) } openView('alerts') }}
             onSelectAgent={handleSelectAgent} onOpenPolicies={() => openView('governance')} />
         ) : null}
         {activeView === 'timeline' ? (

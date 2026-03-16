@@ -118,7 +118,8 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 
   getSelectedAgent: () => {
     const state = get()
-    return state.workspace.agents.find((a) => a.id === state.selectedAgentId) ?? state.workspace.agents[0]
+    const EMPTY_AGENT = { id: '', name: 'No agents', owner: '', environment: 'Custom' as const, businessPurpose: '', autonomyLevel: 'assisted' as const, lastDeployment: '', status: 'healthy' as const, events24h: 0, openIncidents: 0 }
+    return state.workspace.agents.find((a) => a.id === state.selectedAgentId) ?? state.workspace.agents[0] ?? EMPTY_AGENT
   },
 
   getLiveAlerts: () => {
@@ -311,5 +312,4 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   },
 }))
 
-// Auto-load from API on startup
-useWorkspaceStore.getState().loadFromApi()
+// Note: loadFromApi() is called by AuthenticatedApp useEffect after auth is ready

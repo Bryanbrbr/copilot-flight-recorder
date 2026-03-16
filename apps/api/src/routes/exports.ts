@@ -8,7 +8,7 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
   app.get<{
     Querystring: { since?: string; status?: string }
   }>('/csv/alerts', async (req, reply) => {
-    const tenantId = req.auth?.tenantId ?? 'tenant-northwind'
+    const tenantId = req.auth!.tenantId
 
     const conditions = [eq(alerts.tenantId, tenantId)]
     if (req.query.since) conditions.push(gte(alerts.createdAt, req.query.since))
@@ -29,8 +29,8 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
 
     recordAudit({
       tenantId,
-      userId: req.auth?.userId ?? 'dev-user',
-      userEmail: req.auth?.email ?? 'dev@northwind.com',
+      userId: req.auth!.userId,
+      userEmail: req.auth!.email,
       action: 'export.csv',
       resourceType: 'alerts',
       resourceId: 'bulk-export',
@@ -47,7 +47,7 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
   app.get<{
     Querystring: { since?: string }
   }>('/csv/audit', async (req, reply) => {
-    const tenantId = req.auth?.tenantId ?? 'tenant-northwind'
+    const tenantId = req.auth!.tenantId
 
     const conditions = [eq(auditLog.tenantId, tenantId)]
     if (req.query.since) conditions.push(gte(auditLog.timestamp, req.query.since))
@@ -73,7 +73,7 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
 
   // GET /api/export/csv/agents — Export agents as CSV
   app.get('/csv/agents', async (req, reply) => {
-    const tenantId = req.auth?.tenantId ?? 'tenant-northwind'
+    const tenantId = req.auth!.tenantId
 
     const rows = db.select().from(agents).where(eq(agents.tenantId, tenantId)).all()
 
@@ -93,7 +93,7 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
 
   // GET /api/export/json/report — Full compliance report as JSON
   app.get('/json/report', async (req, reply) => {
-    const tenantId = req.auth?.tenantId ?? 'tenant-northwind'
+    const tenantId = req.auth!.tenantId
 
     const agentRows = db.select().from(agents).where(eq(agents.tenantId, tenantId)).all()
     const alertRows = db.select().from(alerts).where(eq(alerts.tenantId, tenantId)).orderBy(desc(alerts.createdAt)).all()
@@ -121,8 +121,8 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
 
     recordAudit({
       tenantId,
-      userId: req.auth?.userId ?? 'dev-user',
-      userEmail: req.auth?.email ?? 'dev@northwind.com',
+      userId: req.auth!.userId,
+      userEmail: req.auth!.email,
       action: 'export.pdf',
       resourceType: 'report',
       resourceId: 'compliance-report',

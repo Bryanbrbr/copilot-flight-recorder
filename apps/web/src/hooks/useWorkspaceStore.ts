@@ -1,18 +1,22 @@
 import { create } from 'zustand'
-import type { Alert, WorkspaceState } from '@/types'
+import type { AgentEvent, Alert, WorkspaceState } from '@/types'
 import type { CaseActivityEntry, PolicyRolloutMode, ViewId, SearchResult } from '@/types'
-import { buildWorkspaceState, computeWorkspaceMetrics } from '@cfr/shared'
-import { agents, events, policies } from '@cfr/shared'
+import { buildWorkspaceState, computeWorkspaceMetrics, buildInsights } from '@/engine'
+import { agents as seedAgents, events as seedEvents, policies as seedPolicies } from '@/seedData'
 import { buildInitialCaseActivity } from '@/lib/caseHelpers'
 import { severityRank, severityLabels } from '@/constants/labels'
+import { fetchWorkspace, patchAlertStatus, postCaseActivity } from '@/services/apiClient'
 
-const workspace = buildWorkspaceState(agents, events, policies)
-const metrics = computeWorkspaceMetrics(workspace)
+// Start with seed data so the UI renders immediately
+const fallbackWorkspace = buildWorkspaceState(seedAgents, seedEvents, seedPolicies)
+const fallbackMetrics = computeWorkspaceMetrics(fallbackWorkspace)
 
 type WorkspaceStore = {
-  // Core data (readonly)
+  // Core data
   workspace: WorkspaceState
   metrics: ReturnType<typeof computeWorkspaceMetrics>
+  isLoading: boolean
+  apiConnected: boolean
 
   // UI state
   selectedAgentId: string
@@ -25,7 +29,7 @@ type WorkspaceStore = {
   focusedPolicyId: string | undefined
 
   // Derived state (computed getters)
-  getSelectedAgent: () => typeof workspace.agents[0]
+  getSelectedAgent: () => typeof fallbackWorkspace.agents[0]
   getLiveAlerts: () => Alert[]
   getSearchResults: () => SearchResult[]
 
@@ -42,24 +46,80 @@ type WorkspaceStore = {
   openView: (view: ViewId) => void
   openSearchResult: (result: SearchResult) => void
   handleSelectAgent: (agentId: string, openIncident?: boolean) => void
+
+  // Real-time
+  liveEvents: AgentEvent[]
+  sseConnected: boolean
+  addLiveEvent: (event: AgentEvent) => void
+  setSseConnected: (connected: boolean) => void
+
+  // API
+  loadFromApi: () => Promise<void>
 }
 
 export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
-  workspace,
-  metrics,
+  workspace: fallbackWorkspace,
+  metrics: fallbackMetrics,
+  isLoading: false,
+  apiConnected: false,
 
-  selectedAgentId: workspace.agents[0].id,
+  selectedAgentId: fallbackWorkspace.agents[0].id,
   activeView: 'dashboard',
   searchQuery: '',
-  selectedAlertId: workspace.alerts[0]?.id ?? '',
+  selectedAlertId: fallbackWorkspace.alerts[0]?.id ?? '',
   alertStatuses: {},
-  caseActivity: buildInitialCaseActivity(workspace),
+  caseActivity: buildInitialCaseActivity(fallbackWorkspace),
   policyRolloutModes: {},
   focusedPolicyId: undefined,
+  liveEvents: [],
+  sseConnected: false,
+
+  addLiveEvent: (event: AgentEvent) =>
+    set((prev) => ({
+      liveEvents: [event, ...prev.liveEvents].slice(0, 50), // Keep last 50
+      workspace: {
+        ...prev.workspace,
+        events: [event, ...prev.workspace.events],
+      },
+    })),
+
+  setSseConnected: (connected: boolean) => set({ sseConnected: connected }),
+
+  // Load data from API
+  loadFromApi: async () => {
+    set({ isLoading: true })
+    try {
+      const data = await fetchWorkspace()
+      const insights = buildInsights(data.agents, data.events)
+      const workspace: WorkspaceState = {
+        agents: data.agents,
+        events: data.events,
+        policies: data.policies,
+        alerts: data.alerts,
+        insights,
+      }
+      const metrics = computeWorkspaceMetrics(workspace)
+
+      set({
+        workspace,
+        metrics,
+        isLoading: false,
+        apiConnected: true,
+        selectedAgentId: workspace.agents[0]?.id ?? '',
+        selectedAlertId: workspace.alerts[0]?.id ?? '',
+        alertStatuses: {},
+        caseActivity: data.caseActivity,
+      })
+    } catch (err) {
+      console.warn('[store] API unavailable, using seed data:', err)
+      set({ isLoading: false, apiConnected: false })
+    }
+  },
 
   getSelectedAgent: () => {
     const state = get()
-    return state.workspace.agents.find((a) => a.id === state.selectedAgentId) ?? state.workspace.agents[0]
+    const EMPTY_AGENT = { id: '', name: 'No agents', owner: '', environment: 'Custom' as const, businessPurpose: '', autonomyLevel: 'assisted' as const, lastDeployment: '', status: 'healthy' as const, events24h: 0, openIncidents: 0 }
+    return state.workspace.agents.find((a) => a.id === state.selectedAgentId) ?? state.workspace.agents[0] ?? EMPTY_AGENT
   },
 
   getLiveAlerts: () => {
@@ -124,6 +184,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
     const liveAlerts = state.getLiveAlerts()
     const targetAlert = liveAlerts.find((a) => a.id === alertId)
 
+    // Optimistic local update
     set((prev) => ({
       alertStatuses: { ...prev.alertStatuses, [alertId]: status },
     }))
@@ -146,22 +207,31 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
           ? 'The case was closed after containment and review were considered sufficient.'
           : 'The case was moved back into the active queue for another review pass.'
 
+    const activityEntry: CaseActivityEntry = {
+      id: `${alertId}-${Date.now()}`,
+      alertId,
+      timestamp: new Date().toISOString(),
+      actor: 'Operator console',
+      action,
+      detail,
+    }
+
     set((prev) => ({
       caseActivity: {
         ...prev.caseActivity,
-        [alertId]: [
-          {
-            id: `${alertId}-${Date.now()}`,
-            alertId,
-            timestamp: new Date().toISOString(),
-            actor: 'Operator console',
-            action,
-            detail,
-          },
-          ...(prev.caseActivity[alertId] ?? []),
-        ],
+        [alertId]: [activityEntry, ...(prev.caseActivity[alertId] ?? [])],
       },
     }))
+
+    // Persist to API if connected
+    if (state.apiConnected) {
+      patchAlertStatus(alertId, status).catch((err) =>
+        console.warn('[store] Failed to persist alert status:', err),
+      )
+      postCaseActivity(alertId, { actor: activityEntry.actor, action, detail }).catch((err) =>
+        console.warn('[store] Failed to persist case activity:', err),
+      )
+    }
   },
 
   setPolicyRollout: (policyId, mode) =>
@@ -241,3 +311,5 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
     set(updates)
   },
 }))
+
+// Note: loadFromApi() is called by AuthenticatedApp useEffect after auth is ready

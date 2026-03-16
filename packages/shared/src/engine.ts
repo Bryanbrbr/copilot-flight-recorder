@@ -144,12 +144,15 @@ export function buildWorkspaceState(agents: Agent[], events: AgentEvent[], polic
 }
 
 export function formatTimestamp(timestamp: string) {
+  if (!timestamp) return '--'
+  const date = new Date(timestamp)
+  if (isNaN(date.getTime())) return '--'
   return new Intl.DateTimeFormat('fr-FR', {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(timestamp))
+  }).format(date)
 }
 
 export function computeWorkspaceMetrics(state: WorkspaceState) {

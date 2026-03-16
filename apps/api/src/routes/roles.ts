@@ -3,28 +3,30 @@ import { db, userRoles } from '@cfr/db'
 import { eq, and } from 'drizzle-orm'
 import { recordAudit } from '../services/auditService'
 
+const ALLOWED_ROLES = ['admin', 'operator', 'viewer'] as const
+
 export const roleRoutes: FastifyPluginAsync = async (app) => {
   // GET /api/roles — list all roles for the tenant
   app.get('/', async (req) => {
-    const tenantId = req.auth?.tenantId ?? 'tenant-northwind'
+    const tenantId = req.auth!.tenantId
     return db.select().from(userRoles).where(eq(userRoles.tenantId, tenantId)).all()
   })
 
   // GET /api/roles/me — get current user's role
   app.get('/me', async (req) => {
-    const tenantId = req.auth?.tenantId ?? 'tenant-northwind'
-    const userId = req.auth?.userId ?? 'dev-user'
+    const tenantId = req.auth!.tenantId
+    const userId = req.auth!.userId
 
     const role = db.select().from(userRoles)
       .where(and(eq(userRoles.tenantId, tenantId), eq(userRoles.userId, userId)))
       .get()
 
-    // Default to admin for first user or dev mode
+    // Default to admin for first user
     return role ?? {
       id: 'default',
       tenantId,
       userId,
-      userEmail: req.auth?.email ?? 'dev@northwind.com',
+      userEmail: req.auth!.email,
       role: 'admin',
       assignedAt: new Date().toISOString(),
       assignedBy: 'system',
@@ -36,15 +38,28 @@ export const roleRoutes: FastifyPluginAsync = async (app) => {
     Body: {
       userId: string
       userEmail: string
-      role: 'admin' | 'operator' | 'viewer'
+      role: string
     }
   }>('/', async (req, reply) => {
-    const tenantId = req.auth?.tenantId ?? 'tenant-northwind'
-    const assignedBy = req.auth?.email ?? 'dev@northwind.com'
+    const tenantId = req.auth!.tenantId
+    const assignedBy = req.auth!.email
+
+    // Validate role
+    if (!ALLOWED_ROLES.includes(req.body.role as typeof ALLOWED_ROLES[number])) {
+      return reply.code(400).send({ error: `Invalid role. Must be one of: ${ALLOWED_ROLES.join(', ')}` })
+    }
+
+    // Validate inputs
+    if (!req.body.userId || typeof req.body.userId !== 'string' || req.body.userId.length > 200) {
+      return reply.code(400).send({ error: 'Valid userId is required (max 200 characters)' })
+    }
+    if (!req.body.userEmail || typeof req.body.userEmail !== 'string' || req.body.userEmail.length > 200) {
+      return reply.code(400).send({ error: 'Valid userEmail is required (max 200 characters)' })
+    }
 
     // Check caller is admin
     const callerRole = db.select().from(userRoles)
-      .where(and(eq(userRoles.tenantId, tenantId), eq(userRoles.userId, req.auth?.userId ?? 'dev-user')))
+      .where(and(eq(userRoles.tenantId, tenantId), eq(userRoles.userId, req.auth!.userId)))
       .get()
 
     if (callerRole && callerRole.role !== 'admin') {
@@ -70,7 +85,7 @@ export const roleRoutes: FastifyPluginAsync = async (app) => {
 
     recordAudit({
       tenantId,
-      userId: req.auth?.userId ?? 'dev-user',
+      userId: req.auth!.userId,
       userEmail: assignedBy,
       action: 'user.role_change',
       resourceType: 'user',
@@ -85,7 +100,7 @@ export const roleRoutes: FastifyPluginAsync = async (app) => {
 
   // DELETE /api/roles/:id
   app.delete<{ Params: { id: string } }>('/:id', async (req, reply) => {
-    const tenantId = req.auth?.tenantId ?? 'tenant-northwind'
+    const tenantId = req.auth!.tenantId
 
     const role = db.select().from(userRoles)
       .where(and(eq(userRoles.id, req.params.id), eq(userRoles.tenantId, tenantId)))

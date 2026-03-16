@@ -2,7 +2,7 @@ import { useMsal, useIsAuthenticated } from '@azure/msal-react'
 import { InteractionStatus } from '@azure/msal-browser'
 import { loginRequest, isAuthConfigured } from './msalConfig'
 import { msalInstance } from './AuthProvider'
-import { getSession, signOut as localSignOut } from './localAuth'
+import { getSession, getAccessToken as getLocalToken, signOut as localSignOut } from './localAuth'
 import { useSyncExternalStore } from 'react'
 
 export type AuthUser = {
@@ -32,7 +32,7 @@ export function useAuth() {
 
   const localSession = getSession()
 
-  // If user is logged in via email/password, use that
+  // If user is logged in via email/password (server JWT), use that
   if (localSession) {
     return {
       isAuthenticated: true,
@@ -42,32 +42,28 @@ export function useAuth() {
       user: {
         name: localSession.name,
         email: localSession.email,
-        tenantId: 'local-tenant',
-        objectId: `local-${localSession.email}`,
+        tenantId: localSession.tenantId,
+        objectId: localSession.userId,
+        role: localSession.role,
       } as AuthUser,
       login: () => {},
       logout: () => {
         localSignOut()
         window.location.href = '/'
       },
-      getAccessToken: async () => null as string | null,
+      getAccessToken: async () => getLocalToken(),
     }
   }
 
   if (!isAuthConfigured) {
-    // No MSAL configured and no local session — demo mode
+    // No MSAL configured and no local session — not authenticated
     return {
-      isAuthenticated: true,
-      isDemoMode: true,
+      isAuthenticated: false,
+      isDemoMode: false,
       isLocalAuth: false,
       isLoading: false,
-      user: {
-        name: 'Dev User',
-        email: 'dev@northwind.com',
-        tenantId: 'tenant-northwind',
-        objectId: 'dev-user-id',
-      } as AuthUser,
-      login: () => {},
+      user: null,
+      login: () => { window.location.href = '/login' },
       logout: () => { window.location.href = '/' },
       getAccessToken: async () => null as string | null,
     }

@@ -47,8 +47,11 @@ COPY --from=builder /app/apps/api apps/api
 # Copy frontend build to serve via Fastify static
 COPY --from=builder /app/apps/web/dist apps/web/dist
 
-# Create data directory for SQLite
-RUN mkdir -p /app/data
+# Create non-root user for security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Create data directory for SQLite (owned by appuser)
+RUN mkdir -p /app/data && chown -R appuser:appgroup /app/data
 
 ENV NODE_ENV=production
 ENV DATABASE_PATH=/app/data/flight_recorder.db
@@ -59,6 +62,9 @@ EXPOSE 10000
 # Health check uses $PORT at runtime
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s \
   CMD wget -qO- http://localhost:${PORT:-10000}/api/health || exit 1
+
+# Switch to non-root user
+USER appuser
 
 # Run migrations, seed, then start server
 CMD ["sh", "-c", "npx tsx packages/db/src/migrate.ts && npx tsx packages/db/src/seed.ts && npx tsx apps/api/src/index.ts"]

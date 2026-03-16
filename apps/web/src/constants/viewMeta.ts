@@ -19,4 +19,9 @@ export const viewMeta = {
     title: 'Policy operations',
     description: 'Review sharing, publishing, rollout state, and live feedback tied to each policy.',
   },
+  settings: {
+    eyebrow: 'Settings',
+    title: 'Workspace settings',
+    description: 'Configure integrations, notifications, access control, and review the audit trail.',
+  },
 } as const

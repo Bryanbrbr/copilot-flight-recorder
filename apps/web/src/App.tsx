@@ -1,28 +1,52 @@
 import './App.css'
-import { useEffect } from 'react'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useWorkspaceStore } from '@/hooks/useWorkspaceStore'
 import { AgentList } from '@/components/shared'
 import { DashboardView } from '@/views/DashboardView'
 import { TimelineView } from '@/views/TimelineView'
 import { AlertsView } from '@/views/AlertsView'
 import { GovernanceView } from '@/views/GovernanceView'
-import { formatTimestamp, getInsight } from '@cfr/shared'
+import { SettingsView } from '@/views/SettingsView'
+import { formatTimestamp, getInsight } from '@/engine'
 import { viewMeta } from '@/constants/viewMeta'
 import { severityLabels, severityRank } from '@/constants/labels'
 import { connectedSurfaces } from '@/constants/surfaces'
 import { getEffectivePolicyRolloutMode } from '@/lib/policyHelpers'
 import { formatCaseAge } from '@/lib/formatCaseAge'
 import { getReviewState } from '@/lib/caseHelpers'
+import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/auth'
 import { LoginPage } from '@/components/LoginPage'
+import { LandingPage } from '@/views/LandingPage'
+import { FeaturesPage } from '@/views/FeaturesPage'
+import { PricingPage } from '@/views/PricingPage'
+import { PrivacyPage } from '@/views/PrivacyPage'
+import { TermsPage } from '@/views/TermsPage'
+import { setApiTokenProvider } from '@/services/apiClient'
+import { LiveEventFeed } from '@/components/LiveEventFeed'
+import { ShortcutsHelp } from '@/components/ShortcutsHelp'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import type { ViewId } from '@/types'
 
-function App() {
-  const { isAuthenticated, isLoading: authLoading, user, logout, getAccessToken } = useAuth()
+function LandingRoute() {
+  const navigate = useNavigate()
+
+  return (
+    <LandingPage
+      onGetStarted={() => navigate('/app')}
+    />
+  )
+}
+
+function AppRoute() {
+  const { isAuthenticated, isDemoMode, isLoading: authLoading, user, logout, getAccessToken } = useAuth()
+  const [searchParams] = useSearchParams()
+  const demoRequested = searchParams.get('demo') === '1'
 
   useEffect(() => {
-    if (isAuthenticated && getAccessToken) {
-      // Token provider could be wired here for API calls
+    if (isAuthenticated) {
+      setApiTokenProvider(getAccessToken)
     }
   }, [isAuthenticated, getAccessToken])
 
@@ -37,14 +61,40 @@ function App() {
     )
   }
 
-  if (!isAuthenticated) {
-    return <LoginPage />
+  // User is authenticated (via MSAL or email) — show the app
+  if (isAuthenticated && !isDemoMode) {
+    return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} tenantId={user?.tenantId ?? ''} onLogout={logout} isDemoMode={false} />
   }
 
-  return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} onLogout={logout} />
+  // Demo mode: only show if explicitly requested via ?demo=1
+  if (isDemoMode && demoRequested) {
+    return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} tenantId={user?.tenantId ?? 'tenant-northwind'} onLogout={logout} isDemoMode={true} />
+  }
+
+  // Otherwise show login page
+  return <LoginPage />
 }
 
-function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string; userEmail: string; onLogout: () => void }) {
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<LandingRoute />} />
+      <Route path="/features" element={<FeaturesPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/login" element={<AppRoute />} />
+      <Route path="/app" element={<AppRoute />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+function AuthenticatedApp({ userName, userEmail, tenantId: _tid, onLogout, isDemoMode }: { userName: string; userEmail: string; tenantId: string; onLogout: () => void; isDemoMode: boolean }) {
+  void _tid // suppress unused var warning
+  const navigate = useNavigate()
+  const [tenantName, setTenantName] = useState<string | null>(null)
+  const hasAgents = useWorkspaceStore((s) => s.workspace.agents.length > 0)
   const {
     workspace,
     activeView,
@@ -66,6 +116,30 @@ function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string;
     openSearchResult,
     handleSelectAgent,
   } = useWorkspaceStore()
+
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false)
+  const toggleHelp = useCallback(() => setShowShortcutsHelp((prev) => !prev), [])
+  useKeyboardShortcuts({ onToggleHelp: toggleHelp })
+
+  // Reload workspace data from API when app mounts (after auth is ready)
+  useEffect(() => {
+    useWorkspaceStore.getState().loadFromApi()
+  }, [])
+
+  // Load tenant name
+  useEffect(() => {
+    if (isDemoMode) {
+      setTenantName('Northwind Global')
+      return
+    }
+    const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'
+    fetch(`${API_BASE}/auth/me`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('cfr_token') ?? ''}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.user?.tenantName) setTenantName(data.user.tenantName) })
+      .catch(() => {})
+  }, [isDemoMode])
 
   const selectedAgent = getSelectedAgent()
   const liveAlerts = getLiveAlerts()
@@ -118,21 +192,9 @@ function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string;
           : 'No active case is steering the workspace right now.'
   const caseRibbonCards = linkedIncident
     ? [
-        {
-          label: 'Review state',
-          value: caseReviewState.label,
-          detail: caseReviewState.detail,
-        },
-        {
-          label: 'Policy boundary',
-          value: linkedPolicy?.name ?? 'Derived signal',
-          detail: linkedPolicy ? `${linkedPolicy.scope} / ${linkedPolicy.action}` : 'No direct policy mapping is attached to this case.',
-        },
-        {
-          label: 'Decision window',
-          value: caseResponseWindow,
-          detail: caseDecision,
-        },
+        { label: 'Review state', value: caseReviewState.label, detail: caseReviewState.detail },
+        { label: 'Policy boundary', value: linkedPolicy?.name ?? 'Derived signal', detail: linkedPolicy ? `${linkedPolicy.scope} / ${linkedPolicy.action}` : 'No direct policy mapping is attached to this case.' },
+        { label: 'Decision window', value: caseResponseWindow, detail: caseDecision },
       ]
     : []
   const investigationRail = [
@@ -181,17 +243,26 @@ function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string;
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand-block">
-          <span className="brand-kicker">Copilot Flight Recorder</span>
+          <button type="button" className="brand-home-link" onClick={() => navigate('/')}>
+            <span className="brand-kicker">Copilot Flight Recorder</span>
+          </button>
           <h1>Admin center for Copilot agent operations.</h1>
           <p>
             Review incidents, rollout controls, and policy pressure across monitored agents and connected surfaces.
           </p>
         </div>
 
+        {isDemoMode && (
+          <div className="demo-banner">
+            <span className="demo-banner-badge">Demo</span>
+            <p>You are viewing sample data. <button type="button" className="demo-banner-link" onClick={() => navigate('/')}>Connect your tenant</button></p>
+          </div>
+        )}
+
         <div className="tenant-card">
-          <span className="eyebrow">Sample tenant</span>
-          <strong>Northwind Global</strong>
-          <p>Governed rollout with review, publishing controls, and tenant-level visibility.</p>
+          <span className="eyebrow">{isDemoMode ? 'Sample tenant' : 'Your workspace'}</span>
+          <strong>{tenantName ?? userName + "'s Workspace"}</strong>
+          <p>{isDemoMode ? 'Governed rollout with review, publishing controls, and tenant-level visibility.' : 'Monitor agents, enforce policies, and manage incidents.'}</p>
           <div className="tenant-summary-grid">
             {tenantSummary.map((item) => (
               <div key={item.label} className="tenant-summary-item">
@@ -208,6 +279,7 @@ function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string;
             ['timeline', 'Incident'],
             ['alerts', 'Queue'],
             ['governance', 'Policies'],
+            ['settings', 'Settings'],
           ] as const).map(([value, label]) => (
             <button
               key={value}
@@ -252,7 +324,7 @@ function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string;
               <input id="workspace-search" type="text" placeholder="Search assets, incidents, or policies" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} />
             </label>
             <div className="topbar-meta">
-              <span className="context-chip">Northwind Global</span>
+              <span className="context-chip">{tenantName ?? userName + "'s Workspace"}</span>
               <span className="context-chip">Updated {latestWorkspaceEvent ? formatTimestamp(latestWorkspaceEvent.timestamp) : 'now'}</span>
               <span className="context-chip">{selectedAgent.name}</span>
               <span className="trust-chip large">Trust {getInsight(workspace, selectedAgent.id)?.trustScore ?? '--'}</span>
@@ -340,24 +412,12 @@ function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string;
               ))}
             </div>
             <div className="case-ribbon-actions">
-              <button type="button" className="action-button primary" onClick={() => openView('timeline')}>
-                Open case
-              </button>
-              <button type="button" className="action-button subtle" onClick={() => openView('governance')}>
-                Open policy
-              </button>
-              <button
-                type="button"
-                className="action-button"
-                onClick={() => updateAlertStatus(linkedIncident.id, linkedIncident.status === 'acknowledged' ? 'open' : 'acknowledged')}
-              >
+              <button type="button" className="action-button primary" onClick={() => openView('timeline')}>Open case</button>
+              <button type="button" className="action-button subtle" onClick={() => openView('governance')}>Open policy</button>
+              <button type="button" className="action-button" onClick={() => updateAlertStatus(linkedIncident.id, linkedIncident.status === 'acknowledged' ? 'open' : 'acknowledged')}>
                 {linkedIncident.status === 'acknowledged' ? 'Return to open' : 'Acknowledge'}
               </button>
-              <button
-                type="button"
-                className="action-button subtle"
-                onClick={() => updateAlertStatus(linkedIncident.id, linkedIncident.status === 'resolved' ? 'open' : 'resolved')}
-              >
+              <button type="button" className="action-button subtle" onClick={() => updateAlertStatus(linkedIncident.id, linkedIncident.status === 'resolved' ? 'open' : 'resolved')}>
                 {linkedIncident.status === 'resolved' ? 'Reopen' : 'Resolve'}
               </button>
             </div>
@@ -371,70 +431,81 @@ function AuthenticatedApp({ userName, userEmail, onLogout }: { userName: string;
           </section>
         ) : null}
 
-        {activeView === 'dashboard' ? (
-          <DashboardView
-            selectedAgent={selectedAgent}
-            alerts={liveAlerts}
-            rolloutModes={policyRolloutModes}
-            onOpenIncident={(alertId) => { if (alertId) { setSelectedAlertId(alertId) } openView('alerts') }}
-            onSelectAgent={handleSelectAgent}
-            onOpenPolicies={() => openView('governance')}
-          />
+        {!isDemoMode && !hasAgents && activeView === 'dashboard' ? (
+          <section className="onboarding-panel">
+            <div className="onboarding-hero">
+              <h2>Welcome to Copilot Flight Recorder</h2>
+              <p>Connect your first AI agent to start monitoring, governing, and securing your Copilot deployments.</p>
+            </div>
+            <div className="onboarding-steps">
+              <div className="onboarding-step">
+                <span className="onboarding-step-number">1</span>
+                <div>
+                  <strong>Generate an API Key</strong>
+                  <p>Go to <button type="button" className="onboarding-link" onClick={() => openView('settings')}>Settings</button> and create your first API key.</p>
+                </div>
+              </div>
+              <div className="onboarding-step">
+                <span className="onboarding-step-number">2</span>
+                <div>
+                  <strong>Send your first event</strong>
+                  <p>Use the API to send agent telemetry. Example:</p>
+                  <pre className="onboarding-code">{`curl -X POST ${import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'}/ingest/events \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: YOUR_API_KEY" \\
+  -d '{
+    "agentId": "my-copilot",
+    "agentName": "My First Copilot",
+    "type": "message.received",
+    "title": "User query received",
+    "summary": "First test event from my agent",
+    "outcome": "success",
+    "riskScore": 10,
+    "actor": "My Copilot"
+  }'`}</pre>
+                </div>
+              </div>
+              <div className="onboarding-step">
+                <span className="onboarding-step-number">3</span>
+                <div>
+                  <strong>Configure policies</strong>
+                  <p>Go to <button type="button" className="onboarding-link" onClick={() => openView('governance')}>Policies</button> to review and customize your governance rules.</p>
+                </div>
+              </div>
+            </div>
+            <div className="onboarding-actions">
+              <button type="button" className="action-button primary" onClick={() => openView('settings')}>Go to Settings</button>
+              <button type="button" className="action-button subtle" onClick={() => navigate('/app?demo=1')}>Explore the demo instead</button>
+            </div>
+          </section>
+        ) : null}
+
+        {activeView === 'dashboard' && (isDemoMode || hasAgents) ? (
+          <DashboardView selectedAgent={selectedAgent} alerts={liveAlerts} rolloutModes={policyRolloutModes}
+            onOpenIncident={(alertId: string | undefined) => { if (alertId) { setSelectedAlertId(alertId) } openView('alerts') }}
+            onSelectAgent={handleSelectAgent} onOpenPolicies={() => openView('governance')} />
         ) : null}
         {activeView === 'timeline' ? (
-          <TimelineView
-            selectedAgent={selectedAgent}
-            agentAlerts={selectedAgentAlerts}
-            highlightedAlert={linkedIncident}
-            caseActivity={linkedCaseActivity}
-            onOpenAlertCenter={() => openView('alerts')}
-            onOpenGovernance={() => openView('governance')}
-          />
+          <TimelineView selectedAgent={selectedAgent} agentAlerts={selectedAgentAlerts} highlightedAlert={linkedIncident}
+            caseActivity={linkedCaseActivity} onOpenAlertCenter={() => openView('alerts')} onOpenGovernance={() => openView('governance')} />
         ) : null}
         {activeView === 'alerts' ? (
-          <AlertsView
-            alerts={liveAlerts}
-            selectedAlertId={selectedAlertId}
-            caseActivity={caseActivity}
-            onSelectAlert={setSelectedAlertId}
-            onUpdateAlertStatus={updateAlertStatus}
-            onOpenIncident={() => openView('timeline')}
-            onOpenGovernance={() => openView('governance')}
-            onSelectAgent={handleSelectAgent}
-          />
+          <AlertsView alerts={liveAlerts} selectedAlertId={selectedAlertId} caseActivity={caseActivity}
+            onSelectAlert={setSelectedAlertId} onUpdateAlertStatus={updateAlertStatus} onOpenIncident={() => openView('timeline')}
+            onOpenGovernance={() => openView('governance')} onSelectAgent={handleSelectAgent} />
         ) : null}
         {activeView === 'governance' ? (
-          <GovernanceView
-            highlightedPolicyId={effectivePolicyId}
-            alerts={liveAlerts}
-            caseActivity={caseActivity}
-            rolloutModes={policyRolloutModes}
-            onSelectAgent={handleSelectAgent}
-            onOpenIncident={(alertId) => {
-              if (alertId) {
-                const alert = liveAlerts.find((item) => item.id === alertId)
-                if (alert) {
-                  setSelectedAgentId(alert.agentId)
-                }
-                setSelectedAlertId(alertId)
-              }
-              openView('timeline')
-            }}
-            onOpenQueue={(alertId) => {
-              if (alertId) {
-                const alert = liveAlerts.find((item) => item.id === alertId)
-                if (alert) {
-                  setSelectedAgentId(alert.agentId)
-                }
-                setSelectedAlertId(alertId)
-              }
-              openView('alerts')
-            }}
-            onSetPolicyRollout={(policyId, mode) => setPolicyRollout(policyId, mode)}
-            onFocusPolicy={setFocusedPolicyId}
-          />
+          <GovernanceView highlightedPolicyId={effectivePolicyId} alerts={liveAlerts} caseActivity={caseActivity}
+            rolloutModes={policyRolloutModes} onSelectAgent={handleSelectAgent}
+            onOpenIncident={(alertId) => { if (alertId) { const a = liveAlerts.find((i) => i.id === alertId); if (a) setSelectedAgentId(a.agentId); setSelectedAlertId(alertId) } openView('timeline') }}
+            onOpenQueue={(alertId) => { if (alertId) { const a = liveAlerts.find((i) => i.id === alertId); if (a) setSelectedAgentId(a.agentId); setSelectedAlertId(alertId) } openView('alerts') }}
+            onSetPolicyRollout={(policyId, mode) => setPolicyRollout(policyId, mode)} onFocusPolicy={setFocusedPolicyId} />
         ) : null}
+        {activeView === 'settings' ? <SettingsView /> : null}
       </main>
+
+      <LiveEventFeed />
+      {showShortcutsHelp && <ShortcutsHelp onClose={() => setShowShortcutsHelp(false)} />}
     </div>
   )
 }

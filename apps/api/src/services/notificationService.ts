@@ -25,9 +25,41 @@ export type NotificationEvent = {
   metadata?: Record<string, string>
 }
 
+// ─── Security: Webhook URL validation (SSRF prevention) ─────────────────
+
+function validateWebhookUrl(url: string): void {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    throw new Error('Invalid webhook URL')
+  }
+
+  // Only allow HTTPS in production
+  if (process.env.NODE_ENV === 'production' && parsed.protocol !== 'https:') {
+    throw new Error('Webhook URL must use HTTPS')
+  }
+
+  // Block private/internal IP ranges and metadata endpoints
+  const hostname = parsed.hostname.toLowerCase()
+  const blockedPatterns = [
+    'localhost', '127.', '0.0.0.0', '::1',
+    '10.', '172.16.', '172.17.', '172.18.', '172.19.',
+    '172.20.', '172.21.', '172.22.', '172.23.', '172.24.',
+    '172.25.', '172.26.', '172.27.', '172.28.', '172.29.',
+    '172.30.', '172.31.',
+    '192.168.',
+    '169.254.',  // AWS/cloud metadata endpoint
+  ]
+  if (blockedPatterns.some(p => hostname.startsWith(p) || hostname === p)) {
+    throw new Error('Webhook URL cannot target internal or private network addresses')
+  }
+}
+
 // ─── Channel Dispatchers ─────────────────────────────────────────────────
 
 async function sendTeamsWebhook(webhookUrl: string, notification: NotificationEvent) {
+  validateWebhookUrl(webhookUrl)
   const card = {
     '@type': 'MessageCard',
     '@context': 'http://schema.org/extensions',
@@ -67,6 +99,7 @@ async function sendTeamsWebhook(webhookUrl: string, notification: NotificationEv
 }
 
 async function sendSlackWebhook(webhookUrl: string, notification: NotificationEvent) {
+  validateWebhookUrl(webhookUrl)
   const emoji = notification.severity === 'critical' ? '🚨'
     : notification.severity === 'high' ? '⚠️'
     : notification.severity === 'medium' ? '🔔'
@@ -171,17 +204,23 @@ export async function dispatchNotification(notification: NotificationEvent) {
     if (!channel) continue
 
     try {
-      const config = JSON.parse(channel.config)
+      let config: Record<string, unknown>
+      try {
+        config = JSON.parse(channel.config)
+      } catch {
+        results.push({ channelId: channel.id, success: false, error: 'Invalid channel configuration' })
+        continue
+      }
 
       switch (channel.type) {
         case 'teams_webhook':
-          await sendTeamsWebhook(config.webhookUrl, notification)
+          await sendTeamsWebhook(config.webhookUrl as string, notification)
           break
         case 'slack_webhook':
-          await sendSlackWebhook(config.webhookUrl, notification)
+          await sendSlackWebhook(config.webhookUrl as string, notification)
           break
         case 'email':
-          await sendEmail(config, notification)
+          await sendEmail(config as { smtpHost: string; port: number; from: string; to: string[] }, notification)
           break
         default:
           console.warn(`[notification] Unknown channel type: ${channel.type}`)

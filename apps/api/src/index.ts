@@ -1,5 +1,9 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import helmet from '@fastify/helmet'
+import rateLimit from '@fastify/rate-limit'
+import cookie from '@fastify/cookie'
+import csrf from '@fastify/csrf-protection'
 import fastifyStatic from '@fastify/static'
 import { connectDb } from '@cfr/db'
 import { authMiddleware } from './middleware/auth'
@@ -14,6 +18,10 @@ import { notificationRoutes } from './routes/notifications'
 import { exportRoutes } from './routes/exports'
 import { roleRoutes } from './routes/roles'
 import { streamRoutes } from './routes/stream'
+import { authRoutes } from './routes/auth'
+import { apiKeyRoutes } from './routes/apiKeys'
+import { ingestRoutes } from './routes/ingest'
+import { billingRoutes } from './routes/billing'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { existsSync } from 'fs'
@@ -25,7 +33,39 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 async function main() {
   const app = Fastify({ logger: true })
 
-  await app.register(cors, { origin: true })
+  // Security: CORS — restrict to known origins
+  const ALLOWED_ORIGINS = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+    : ['http://localhost:5173']
+  await app.register(cors, { origin: ALLOWED_ORIGINS, credentials: true })
+
+  // Security: HTTP headers (CSP, HSTS, X-Frame-Options, etc.)
+  await app.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", 'https://login.microsoftonline.com', 'https://graph.microsoft.com'],
+        fontSrc: ["'self'", 'https:', 'data:'],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+      },
+    },
+  })
+
+  // Security: Rate limiting — prevent brute force & DoS
+  await app.register(rateLimit, {
+    max: 100,
+    timeWindow: '1 minute',
+  })
+
+  // Security: CSRF protection — prevents cross-site request forgery
+  await app.register(cookie)
+  await app.register(csrf, {
+    cookieOpts: { signed: false, httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' },
+  })
 
   // Auth middleware (no-op in dev mode without MSAL_CLIENT_ID)
   await app.register(authMiddleware)
@@ -45,6 +85,10 @@ async function main() {
   await app.register(exportRoutes, { prefix: '/api/export' })
   await app.register(roleRoutes, { prefix: '/api/roles' })
   await app.register(streamRoutes, { prefix: '/api/stream' })
+  await app.register(authRoutes, { prefix: '/api/auth' })
+  await app.register(apiKeyRoutes, { prefix: '/api/keys' })
+  await app.register(ingestRoutes, { prefix: '/api/ingest' })
+  await app.register(billingRoutes, { prefix: '/api/billing' })
 
   // Health check
   app.get('/api/health', async () => ({

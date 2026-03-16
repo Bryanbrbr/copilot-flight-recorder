@@ -1,4 +1,5 @@
 export { AuthProvider } from './AuthProvider'
-export { useAuth } from './useAuth'
+export { useAuth, notifyLocalSessionChange } from './useAuth'
 export { isAuthConfigured } from './msalConfig'
+export { signUp, signIn } from './localAuth'
 export type { AuthUser } from './useAuth'

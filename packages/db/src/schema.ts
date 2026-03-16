@@ -126,6 +126,31 @@ export const graphSyncLog = sqliteTable('graph_sync_log', {
   errorMessage: text('error_message'),
 })
 
+// ─── Users (Server-side auth) ────────────────────────────────────────
+
+export const users = sqliteTable('users', {
+  id: text('id').primaryKey(),
+  tenantId: text('tenant_id').notNull().references(() => tenants.id),
+  email: text('email').notNull().unique(),
+  name: text('name').notNull(),
+  passwordHash: text('password_hash').notNull(),
+  role: text('role').notNull().default('admin'), // first user = admin
+  createdAt: text('created_at').notNull(),
+})
+
+// ─── API Keys ────────────────────────────────────────────────────────
+
+export const apiKeys = sqliteTable('api_keys', {
+  id: text('id').primaryKey(),
+  tenantId: text('tenant_id').notNull().references(() => tenants.id),
+  name: text('name').notNull(),
+  keyHash: text('key_hash').notNull(), // SHA-256 of the full key
+  prefix: text('prefix').notNull(),    // First 8 chars for display (e.g. "cfr_ab12")
+  createdAt: text('created_at').notNull(),
+  lastUsedAt: text('last_used_at'),
+  revoked: integer('revoked', { mode: 'boolean' }).notNull().default(false),
+})
+
 // ─── User Roles (RBAC) ──────────────────────────────────────────────────
 
 export const userRoles = sqliteTable('user_roles', {

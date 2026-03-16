@@ -1,10 +1,11 @@
 import type { FastifyPluginAsync } from 'fastify'
+import { eventBus } from '../services/eventBus.js'
 
 /**
  * SSE event stream — pushes real-time events to connected clients.
  *
- * In production this would be wired to the DB insert pipeline.
- * For the demo, a server-side simulator generates events every 5 s.
+ * In production: events come from the ingest endpoint via eventBus.
+ * In demo mode (tenant-northwind): a server-side simulator generates events.
  */
 
 type SSEClient = {
@@ -16,13 +17,13 @@ type SSEClient = {
 
 const clients = new Map<string, SSEClient>()
 
-// ─── Event simulator (server-side demo) ─────────────────────────
+// ─── Event simulator (demo mode only) ──────────────────────────
 
 const agentNames = [
-  { id: 'agent-sales-triage', name: 'Sales Triage Copilot' },
-  { id: 'agent-hr-onboarding', name: 'HR Onboarding Copilot' },
-  { id: 'agent-finance-audit', name: 'Finance Audit Copilot' },
-  { id: 'agent-it-helpdesk', name: 'IT Helpdesk Copilot' },
+  { id: 'agt-sales-triage', name: 'Sales Triage Copilot' },
+  { id: 'agt-hr-onboard', name: 'HR Onboarding Agent' },
+  { id: 'agt-fin-close', name: 'Finance Close Agent' },
+  { id: 'agt-graph-sync', name: 'Graph Sync Worker' },
 ]
 
 const eventTypes = [
@@ -48,7 +49,7 @@ function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
-function generateEvent() {
+function generateDemoEvent() {
   const agent = pick(agentNames)
   const type = pick(eventTypes)
   const outcome = pick(outcomes)
@@ -62,6 +63,7 @@ function generateEvent() {
   return {
     id: `evt-sse-${counter}`,
     agentId: agent.id,
+    agentName: agent.name,
     timestamp: new Date().toISOString(),
     type,
     title: pick(titles[type]),
@@ -75,28 +77,22 @@ function generateEvent() {
 
 let simulatorInterval: ReturnType<typeof setInterval> | null = null
 
-function ensureSimulator() {
+function ensureDemoSimulator() {
   if (simulatorInterval) return
+  const demoClients = () => [...clients.values()].filter(c => c.tenantId === 'tenant-northwind')
+
   simulatorInterval = setInterval(() => {
-    if (clients.size === 0) {
+    const dc = demoClients()
+    if (dc.length === 0) {
       clearInterval(simulatorInterval!)
       simulatorInterval = null
       return
     }
-    const event = generateEvent()
-    broadcast('event', event)
+    const event = generateDemoEvent()
+    for (const client of dc) {
+      try { client.send('event', event) } catch { /* client gone */ }
+    }
   }, 5000)
-}
-
-function broadcast(eventType: string, data: unknown) {
-  for (const client of clients.values()) {
-    try { client.send(eventType, data) } catch { /* client gone */ }
-  }
-}
-
-// Public helper so other routes can push events
-export function pushSSE(eventType: string, data: unknown) {
-  broadcast(eventType, data)
 }
 
 // ─── Route ──────────────────────────────────────────────────────
@@ -104,7 +100,7 @@ export function pushSSE(eventType: string, data: unknown) {
 export const streamRoutes: FastifyPluginAsync = async (app) => {
   app.get('/stream', async (req, reply) => {
     const clientId = `sse-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-    const tenantId = (req as any).auth?.tenantId ?? 'demo'
+    const tenantId = req.auth!.tenantId
 
     // SSE headers
     reply.raw.writeHead(200, {
@@ -125,13 +121,23 @@ export const streamRoutes: FastifyPluginAsync = async (app) => {
       },
       close: () => {
         clients.delete(clientId)
+        unsubscribe()
       },
     }
 
     clients.set(clientId, client)
-    ensureSimulator()
 
-    // Heartbeat every 30s to keep connection alive
+    // Subscribe to real events from the ingest pipeline via eventBus
+    const unsubscribe = eventBus.subscribe(tenantId, (event) => {
+      try { client.send('event', event) } catch { /* client gone */ }
+    })
+
+    // For demo tenant, also start the simulator
+    if (tenantId === 'tenant-northwind') {
+      ensureDemoSimulator()
+    }
+
+    // Heartbeat every 30s
     const heartbeat = setInterval(() => {
       try { reply.raw.write(`:heartbeat\n\n`) } catch { clearInterval(heartbeat) }
     }, 30000)
@@ -145,9 +151,13 @@ export const streamRoutes: FastifyPluginAsync = async (app) => {
     await new Promise(() => {})
   })
 
-  // GET /api/stream/clients — admin endpoint
-  app.get('/clients', async () => ({
-    count: clients.size,
-    clients: [...clients.values()].map((c) => ({ id: c.id, tenantId: c.tenantId })),
-  }))
+  // GET /api/stream/clients — only show clients from caller's tenant
+  app.get('/clients', async (req) => {
+    const tenantId = req.auth!.tenantId
+    const tenantClients = [...clients.values()].filter(c => c.tenantId === tenantId)
+    return {
+      count: tenantClients.length,
+      clients: tenantClients.map(c => ({ id: c.id })),
+    }
+  })
 }

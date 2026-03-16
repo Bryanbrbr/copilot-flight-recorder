@@ -7,10 +7,17 @@ import type { GraphToken } from '../services/graphClient'
 
 export const graphSyncRoutes: FastifyPluginAsync = async (app) => {
   // POST /api/graph/sync — trigger a manual Graph API sync
-  app.post<{ Body: { accessToken: string } }>('/sync', async (req, reply) => {
-    const tenantId = req.auth?.tenantId ?? 'tenant-northwind'
-    const userId = req.auth?.userId ?? 'dev-user'
-    const userEmail = req.auth?.email ?? 'dev@northwind.com'
+  // Access token must be sent via X-Graph-Token header (not in body)
+  app.post('/sync', async (req, reply) => {
+    const tenantId = req.auth!.tenantId
+    const userId = req.auth!.userId
+    const userEmail = req.auth!.email
+
+    // Read Graph API token from header — never from body (prevents token logging)
+    const graphAccessToken = req.headers['x-graph-token'] as string
+    if (!graphAccessToken) {
+      return reply.code(400).send({ error: 'Missing X-Graph-Token header' })
+    }
 
     const syncId = crypto.randomUUID()
     const startedAt = new Date().toISOString()
@@ -25,7 +32,7 @@ export const graphSyncRoutes: FastifyPluginAsync = async (app) => {
 
     try {
       const token: GraphToken = {
-        accessToken: req.body.accessToken,
+        accessToken: graphAccessToken,
         tenantId,
       }
 
@@ -103,7 +110,7 @@ export const graphSyncRoutes: FastifyPluginAsync = async (app) => {
 
   // GET /api/graph/sync/history — view sync history
   app.get('/sync/history', async (req) => {
-    const tenantId = req.auth?.tenantId ?? 'tenant-northwind'
+    const tenantId = req.auth!.tenantId
     return db
       .select()
       .from(graphSyncLog)
