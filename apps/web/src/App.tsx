@@ -66,9 +66,9 @@ function AppRoute() {
     return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} tenantId={user?.tenantId ?? ''} onLogout={logout} isDemoMode={false} />
   }
 
-  // Demo mode: only show if explicitly requested via ?demo=1
-  if (isDemoMode && demoRequested) {
-    return <AuthenticatedApp userName={user?.name ?? 'User'} userEmail={user?.email ?? ''} tenantId={user?.tenantId ?? 'tenant-northwind'} onLogout={logout} isDemoMode={true} />
+  // Demo mode: show if explicitly requested via ?demo=1 (works regardless of MSAL config)
+  if (demoRequested && !isAuthenticated) {
+    return <AuthenticatedApp userName="Demo User" userEmail="demo@northwind.com" tenantId="tenant-northwind" onLogout={() => { window.location.href = '/' }} isDemoMode={true} />
   }
 
   // Otherwise show login page
