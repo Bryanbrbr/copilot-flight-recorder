@@ -132,7 +132,7 @@ function AuthenticatedApp({ userName, userEmail, tenantId: _tid, onLogout, isDem
       setTenantName('Northwind Global')
       return
     }
-    const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'
+    const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
     fetch(`${API_BASE}/auth/me`, {
       headers: { 'Authorization': `Bearer ${localStorage.getItem('cfr_token') ?? ''}` },
     })
@@ -450,7 +450,7 @@ function AuthenticatedApp({ userName, userEmail, tenantId: _tid, onLogout, isDem
                 <div>
                   <strong>Send your first event</strong>
                   <p>Use the API to send agent telemetry. Example:</p>
-                  <pre className="onboarding-code">{`curl -X POST ${import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'}/ingest/events \\
+                  <pre className="onboarding-code">{`curl -X POST ${import.meta.env.VITE_API_URL ?? '/api'}/ingest/events \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: YOUR_API_KEY" \\
   -d '{

@@ -56,10 +56,10 @@ export function useAuth() {
   }
 
   if (!isAuthConfigured) {
-    // No MSAL configured and no local session — not authenticated
+    // No MSAL configured and no local session — allow demo mode
     return {
       isAuthenticated: false,
-      isDemoMode: false,
+      isDemoMode: true,
       isLocalAuth: false,
       isLoading: false,
       user: null,

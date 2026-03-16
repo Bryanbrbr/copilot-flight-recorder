@@ -1,7 +1,7 @@
 import type { Agent, AgentEvent, Alert, Policy } from '@/types'
 import type { CaseActivityEntry } from '@/types'
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
 
 // Token provider — set by auth layer so API calls include the JWT
 let tokenProvider: (() => Promise<string | null>) | null = null

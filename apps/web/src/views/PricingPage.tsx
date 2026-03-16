@@ -27,7 +27,7 @@ const faqs = [
   },
 ]
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
 
 export function PricingPage() {
   const navigate = useNavigate()

@@ -170,7 +170,7 @@ export function LoginPage() {
         <button
           type="button"
           className="login-button"
-          onClick={() => navigate('/app?demo=1')}
+          onClick={() => { window.location.href = '/app?demo=1' }}
         >
           Explore the demo with sample data
         </button>
