@@ -1,5 +1,5 @@
 import './App.css'
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom'
 import { useWorkspaceStore } from '@/hooks/useWorkspaceStore'
 import { AgentList } from '@/components/shared'
 import { DashboardView } from '@/views/DashboardView'
@@ -241,6 +241,17 @@ function AuthenticatedApp({ userName, userEmail, tenantId: _tid, onLogout, isDem
 
   return (
     <div className="app-shell">
+      <nav className="app-topnav">
+        <Link to="/" className="app-topnav-brand">
+          <span className="app-topnav-logo">◈</span>
+          <span>Copilot Flight Recorder</span>
+        </Link>
+        <div className="app-topnav-links">
+          <Link to="/features">Features</Link>
+          <Link to="/pricing">Pricing</Link>
+          {isDemoMode && <Link to="/login" className="app-topnav-cta">Sign in</Link>}
+        </div>
+      </nav>
       <aside className="sidebar">
         <div className="brand-block">
           <button type="button" className="brand-home-link" onClick={() => navigate('/')}>

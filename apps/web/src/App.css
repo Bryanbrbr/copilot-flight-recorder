@@ -650,9 +650,70 @@
   background: #eef3f9;
 }
 
+/* --- App top navigation bar --- */
+
+.app-topnav {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 48px;
+  background: #ffffff;
+  border-bottom: 1px solid #d8e0ec;
+  z-index: 100;
+}
+
+.app-topnav-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #10203a;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.app-topnav-logo {
+  color: #0078d4;
+  font-size: 18px;
+}
+
+.app-topnav-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.app-topnav-links a {
+  text-decoration: none;
+  color: #5a6a7e;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.app-topnav-links a:hover {
+  color: #0078d4;
+}
+
+.app-topnav-cta {
+  background: #0078d4 !important;
+  color: #ffffff !important;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.app-topnav-cta:hover {
+  background: #106ebe !important;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: 308px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
   min-height: 100vh;
   color: #10203a;
   background: #eef3f9;
