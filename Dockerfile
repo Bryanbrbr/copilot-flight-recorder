@@ -17,8 +17,8 @@ RUN npm ci
 # Copy source
 COPY . .
 
-# Build frontend (Vite uses root vite.config.ts + root src/)
-RUN npx vite build --outDir apps/web/dist
+# Build frontend from apps/web/ (uses apps/web/vite.config.ts + apps/web/src/)
+RUN cd apps/web && npx vite build
 
 # ─── Stage 2: Production ─────────────────────────────────────────────────
 FROM node:22-alpine AS production
