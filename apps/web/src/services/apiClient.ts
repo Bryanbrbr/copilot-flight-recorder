@@ -26,8 +26,11 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   })
 
   if (res.status === 401) {
-    // Token expired or invalid — let the auth layer handle redirect
-    window.location.href = '/'
+    // Token expired or invalid — redirect to home, unless in demo mode
+    const isDemo = new URLSearchParams(window.location.search).get('demo') === '1'
+    if (!isDemo) {
+      window.location.href = '/'
+    }
     throw new Error('Unauthorized')
   }
 
